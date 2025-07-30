@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveStepsBtn = document.getElementById('saveStepsBtn');
     const stepsList = document.getElementById('stepsList');
     const stepsChartCanvas = document.getElementById('stepsChart');
+    const appVersionSpan = document.getElementById('appVersion'); // Get the app version span
 
     // IndexedDB constants
     const DB_NAME = 'stepTrackerDB';
@@ -13,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hardcoded step goal
     const STEP_GOAL = 8000;
+
+    // Set the app version
+    appVersionSpan.textContent = '1.0.1'; // You can update this manually
 
     /**
      * Opens the IndexedDB database. If it doesn't exist, it creates it
@@ -190,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             yAxisID: 'y', // Explicitly assign to 'y' axis
                             categoryPercentage: 0.7, // Controls the space between categories (bars)
                             barPercentage: 0.8,      // Controls the width of the bar within its category
+                            borderRadius: 5,         // Added for rounded bar tops
                         },
                         {
                             label: `Goal (${STEP_GOAL} steps)`,
