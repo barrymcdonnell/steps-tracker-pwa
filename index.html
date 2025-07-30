@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Tracker PWA</title>
+    <title>Daily Habits Tracker PWA</title>
     <!-- Link to Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Custom styles -->
@@ -18,21 +18,27 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
     <div class="container bg-white p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
-        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Daily Step Tracker</h1>
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Daily Habits Tracker</h1>
 
-        <div class="mb-6">
+        <div class="mb-4">
             <label for="stepsInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Steps:</label>
             <input type="number" id="stepsInput" placeholder="e.g., 7500"
                    class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
         </div>
 
-        <button id="saveStepsBtn"
+        <div class="mb-6">
+            <label for="waterInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Water (ml):</label>
+            <input type="number" id="waterInput" placeholder="e.g., 2000"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+
+        <button id="saveDailyDataBtn"
                 class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-            Save Steps
+            Save Daily Data
         </button>
 
         <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days:</h2>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Steps):</h2>
             <ul id="stepsList" class="space-y-3">
                 <!-- Steps will be loaded here by JavaScript -->
                 <li class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
@@ -49,9 +55,27 @@
             </div>
         </div>
 
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Water):</h2>
+            <ul id="waterList" class="space-y-3">
+                <!-- Water intake will be loaded here by JavaScript -->
+                <li class="bg-blue-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
+                    <span class="font-medium text-blue-800">Loading...</span>
+                    <span class="text-sm text-blue-600"></span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Water Intake Progress</h2>
+            <div class="relative h-64">
+                <canvas id="waterChart"></canvas>
+            </div>
+        </div>
+
         <!-- App Version Text -->
         <div class="mt-8 text-center text-gray-500 text-xs">
-            App Version: <span id="appVersion">1.0.0</span>
+            App Version: <span id="appVersion">1.0.1</span>
         </div>
     </div>
 
