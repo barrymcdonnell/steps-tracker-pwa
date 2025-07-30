@@ -187,7 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             backgroundColor: 'rgba(79, 70, 229, 0.8)', // Tailwind indigo-600 with opacity
                             borderColor: 'rgb(79, 70, 229)',
                             borderWidth: 1,
-                            // Bar charts naturally position data off the axis line
+                            yAxisID: 'y', // Explicitly assign to 'y' axis
+                            categoryPercentage: 0.7, // Controls the space between categories (bars)
+                            barPercentage: 0.8,      // Controls the width of the bar within its category
                         },
                         {
                             label: `Goal (${STEP_GOAL} steps)`,
@@ -198,7 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             borderDash: [5, 5], // Dashed line for goal
                             pointRadius: 0, // No points for goal line
                             tension: 0, // Straight line for goal
-                            fill: false
+                            fill: false,
+                            yAxisID: 'y', // Explicitly assign to 'y' axis
                         }
                     ]
                 },
