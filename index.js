@@ -1,26 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
     const stepsInput = document.getElementById('stepsInput');
-    const saveStepsBtn = document.getElementById('saveStepsBtn');
+    const waterInput = document.getElementById('waterInput'); // New water input
+    const saveDailyDataBtn = document.getElementById('saveDailyDataBtn'); // Renamed button
     const stepsList = document.getElementById('stepsList');
+    const waterList = document.getElementById('waterList'); // New water list
     const stepsChartCanvas = document.getElementById('stepsChart');
-    const appVersionSpan = document.getElementById('appVersion'); // Get the app version span
+    const waterChartCanvas = document.getElementById('waterChart'); // New water chart
+    const appVersionSpan = document.getElementById('appVersion');
 
     // IndexedDB constants
-    const DB_NAME = 'stepTrackerDB';
-    const DB_VERSION = 1;
-    const STORE_NAME = 'dailySteps';
+    const DB_NAME = 'dailyHabitsDB'; // Renamed database for broader scope
+    const DB_VERSION = 2; // Increment version to trigger onupgradeneeded for new store
+    const STEPS_STORE_NAME = 'dailySteps';
+    const WATER_STORE_NAME = 'dailyWater'; // New object store name
     let db; // Variable to hold the IndexedDB instance
-    let stepsChartInstance; // Variable to hold the Chart.js instance
+    let stepsChartInstance; // Variable to hold the Chart.js instance for steps
+    let waterChartInstance; // Variable to hold the Chart.js instance for water
 
-    // Hardcoded step goal
+    // Hardcoded goals
     const STEP_GOAL = 8000;
+    const WATER_GOAL = 2000; // ml
 
     // Set the app version
-    appVersionSpan.textContent = '1.0.1'; // You can update this manually
+    appVersionSpan.textContent = '1.1.0'; // Updated version
 
     /**
      * Opens the IndexedDB database. If it doesn't exist, it creates it
-     * and sets up the object store.
+     * and sets up the object stores.
      * @returns {Promise<IDBDatabase>} A promise that resolves with the database instance.
      */
     function openDatabase() {
@@ -30,11 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
             request.onupgradeneeded = (event) => {
                 // This event is fired when the database is created or its version is upgraded.
                 db = event.target.result;
-                // Create an object store to hold information about daily steps.
-                // The 'date' will be the keyPath, ensuring unique entries per day.
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME, { keyPath: 'date' });
-                    console.log('IndexedDB: Object store created.');
+
+                // Create steps object store if it doesn't exist
+                if (!db.objectStoreNames.contains(STEPS_STORE_NAME)) {
+                    db.createObjectStore(STEPS_STORE_NAME, { keyPath: 'date' });
+                    console.log('IndexedDB: Steps object store created.');
+                }
+
+                // Create water object store if it doesn't exist
+                if (!db.objectStoreNames.contains(WATER_STORE_NAME)) {
+                    db.createObjectStore(WATER_STORE_NAME, { keyPath: 'date' });
+                    console.log('IndexedDB: Water object store created.');
                 }
             };
 
@@ -52,59 +64,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Saves or updates daily steps in IndexedDB.
+     * Saves or updates daily data in IndexedDB for a specific store.
+     * @param {string} storeName - The name of the object store ('dailySteps' or 'dailyWater').
      * @param {string} date - The date in YYYY-MM-DD format.
-     * @param {number} steps - The number of steps.
+     * @param {number} value - The number of steps or water intake.
      * @returns {Promise<void>} A promise that resolves when the data is saved.
      */
-    function saveDailySteps(date, steps) {
+    function saveDailyData(storeName, date, value) {
         return new Promise((resolve, reject) => {
             if (!db) {
                 console.error('IndexedDB: Database not open.');
                 return reject(new Error('Database not open.'));
             }
-            // Start a read-write transaction
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
 
-            // Put (add or update) the data
-            const request = store.put({ date: date, steps: steps });
+            const request = store.put({ date: date, value: value }); // Changed 'steps' to 'value' for generic use
 
             request.onsuccess = () => {
-                console.log(`IndexedDB: Steps for ${date} saved: ${steps}`);
+                console.log(`IndexedDB: ${storeName} for ${date} saved: ${value}`);
                 resolve();
             };
 
             request.onerror = (event) => {
-                console.error('IndexedDB: Error saving steps:', event.target.error);
+                console.error(`IndexedDB: Error saving ${storeName}:`, event.target.error);
                 reject(event.target.error);
             };
         });
     }
 
     /**
-     * Retrieves all daily steps from IndexedDB, sorted by date.
-     * @returns {Promise<Array<{date: string, steps: number}>>} A promise that resolves with an array of step entries.
+     * Retrieves all daily data from IndexedDB for a specific store, sorted by date.
+     * @param {string} storeName - The name of the object store ('dailySteps' or 'dailyWater').
+     * @returns {Promise<Array<{date: string, value: number}>>} A promise that resolves with an array of entries.
      */
-    function getAllDailySteps() {
+    function getAllDailyData(storeName) {
         return new Promise((resolve, reject) => {
             if (!db) {
                 console.error('IndexedDB: Database not open.');
                 return reject(new Error('Database not open.'));
             }
-            // Start a read-only transaction
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.getAll(); // Get all records
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
 
             request.onsuccess = () => {
-                // Sort the results by date in descending order (most recent first)
-                const sortedSteps = request.result.sort((a, b) => new Date(b.date) - new Date(a.date));
-                resolve(sortedSteps);
+                const sortedData = request.result.sort((a, b) => new Date(b.date) - new Date(a.date));
+                resolve(sortedData);
             };
 
             request.onerror = (event) => {
-                console.error('IndexedDB: Error retrieving steps:', event.target.error);
+                console.error(`IndexedDB: Error retrieving ${storeName}:`, event.target.error);
                 reject(event.target.error);
             };
         });
@@ -123,93 +133,131 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Displays the steps data in the UI list and updates the chart.
-     * @param {Array<{date: string, steps: number}>} stepsData - An array of step entries.
+     * Displays the progress data in the UI lists and updates the charts.
      */
-    function displaySteps(stepsData) {
-        stepsList.innerHTML = ''; // Clear existing list items
+    async function displayProgress() {
+        try {
+            const stepsData = await getAllDailyData(STEPS_STORE_NAME);
+            const waterData = await getAllDailyData(WATER_STORE_NAME);
 
-        if (stepsData.length === 0) {
-            stepsList.innerHTML = '<li class="text-center text-gray-500">No steps recorded yet.</li>';
-            return;
-        }
-
-        // Display only the last 7 days for simplicity, or all if less than 7
-        const displayCount = Math.min(stepsData.length, 7);
-        for (let i = 0; i < displayCount; i++) {
-            const entry = stepsData[i];
-            const listItem = document.createElement('li');
-            let goalStatusClass = '';
-            let goalStatusText = '';
-
-            if (entry.steps >= STEP_GOAL) {
-                goalStatusClass = 'bg-green-100 text-green-800'; // Goal met
-                goalStatusText = '✅ Goal Met!';
+            // Display Steps List
+            stepsList.innerHTML = '';
+            if (stepsData.length === 0) {
+                stepsList.innerHTML = '<li class="text-center text-gray-500">No steps recorded yet.</li>';
             } else {
-                goalStatusClass = 'bg-red-100 text-red-800'; // Goal not met
-                goalStatusText = '❌ Goal Not Met';
+                const displayCount = Math.min(stepsData.length, 7);
+                for (let i = 0; i < displayCount; i++) {
+                    const entry = stepsData[i];
+                    const listItem = document.createElement('li');
+                    let goalStatusClass = '';
+                    let goalStatusText = '';
+
+                    if (entry.value >= STEP_GOAL) {
+                        goalStatusClass = 'bg-green-100 text-green-800';
+                        goalStatusText = '✅ Goal Met!';
+                    } else {
+                        goalStatusClass = 'bg-red-100 text-red-800';
+                        goalStatusText = '❌ Goal Not Met';
+                    }
+
+                    listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
+                    listItem.innerHTML = `
+                        <span class="font-medium">${entry.date}</span>
+                        <span class="text-sm">${entry.value} steps (${goalStatusText})</span>
+                    `;
+                    stepsList.appendChild(listItem);
+                }
             }
 
-            listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
-            listItem.innerHTML = `
-                <span class="font-medium">${entry.date}</span>
-                <span class="text-sm">${entry.steps} steps (${goalStatusText})</span>
-            `;
-            stepsList.appendChild(listItem);
-        }
+            // Display Water List
+            waterList.innerHTML = '';
+            if (waterData.length === 0) {
+                waterList.innerHTML = '<li class="text-center text-gray-500">No water recorded yet.</li>';
+            } else {
+                const displayCount = Math.min(waterData.length, 7);
+                for (let i = 0; i < displayCount; i++) {
+                    const entry = waterData[i];
+                    const listItem = document.createElement('li');
+                    let goalStatusClass = '';
+                    let goalStatusText = '';
 
-        // Render the chart with the updated data
-        renderStepsChart(stepsData.slice(0, displayCount).reverse()); // Reverse to show oldest first on chart
+                    if (entry.value >= WATER_GOAL) {
+                        goalStatusClass = 'bg-green-100 text-green-800';
+                        goalStatusText = '✅ Goal Met!';
+                    } else {
+                        goalStatusClass = 'bg-red-100 text-red-800';
+                        goalStatusText = '❌ Goal Not Met';
+                    }
+
+                    listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
+                    listItem.innerHTML = `
+                        <span class="font-medium">${entry.date}</span>
+                        <span class="text-sm">${entry.value} ml (${goalStatusText})</span>
+                    `;
+                    waterList.appendChild(listItem);
+                }
+            }
+
+            // Render Charts
+            renderStepsChart(stepsData.slice(0, Math.min(stepsData.length, 7)).reverse());
+            renderWaterChart(waterData.slice(0, Math.min(waterData.length, 7)).reverse());
+
+        } catch (error) {
+            console.error('Failed to display progress:', error);
+            stepsList.innerHTML = '<li class="text-center text-red-500">Error loading steps data.</li>';
+            waterList.innerHTML = '<li class="text-center text-red-500">Error loading water data.</li>';
+            if (stepsChartInstance) { stepsChartInstance.destroy(); stepsChartInstance = null; }
+            if (waterChartInstance) { waterChartInstance.destroy(); waterChartInstance = null; }
+            stepsChartCanvas.style.display = 'none';
+            waterChartCanvas.style.display = 'none';
+        }
     }
 
     /**
-     * Renders or updates the Chart.js graph with steps data and a goal line.
-     * @param {Array<{date: string, steps: number}>} stepsData - The steps data to plot.
+     * Renders or updates the Chart.js graph for steps with a goal line.
+     * @param {Array<{date: string, value: number}>} stepsData - The steps data to plot.
      */
     function renderStepsChart(stepsData) {
         const labels = stepsData.map(entry => entry.date);
-        const steps = stepsData.map(entry => entry.steps);
-        // Create an array for the goal line, ensuring it spans all data points
+        const steps = stepsData.map(entry => entry.value);
         const goalLine = Array(stepsData.length).fill(STEP_GOAL);
 
         if (stepsChartInstance) {
-            // If chart already exists, update its data
             stepsChartInstance.data.labels = labels;
             stepsChartInstance.data.datasets[0].data = steps;
             stepsChartInstance.data.datasets[1].data = goalLine;
             stepsChartInstance.update();
         } else {
-            // Create a new chart instance
             stepsChartInstance = new Chart(stepsChartCanvas, {
-                type: 'bar', // Changed to bar chart
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
                             label: 'Daily Steps',
                             data: steps,
-                            backgroundColor: 'rgba(79, 70, 229, 0.8)', // Tailwind indigo-600 with opacity
+                            backgroundColor: 'rgba(79, 70, 229, 0.8)',
                             borderColor: 'rgb(79, 70, 229)',
                             borderWidth: 1,
-                            yAxisID: 'y', // Explicitly assign to 'y' axis
-                            categoryPercentage: 0.7, // Controls the space between categories (bars)
-                            barPercentage: 0.8,      // Controls the width of the bar within its category
-                            borderRadius: 5,         // Added for rounded bar tops
-                            order: 1, // Draw bars first
+                            yAxisID: 'y',
+                            categoryPercentage: 0.7,
+                            barPercentage: 0.8,
+                            borderRadius: 5,
+                            order: 1,
                         },
                         {
                             label: `Goal (${STEP_GOAL} steps)`,
                             data: goalLine,
-                            type: 'line', // Explicitly set type to line for overlay
-                            borderColor: 'rgb(239, 68, 68)', // Tailwind red-500
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)', // More transparent for line
-                            borderDash: [5, 5], // Dashed line for goal
-                            pointRadius: 0, // No points for goal line
-                            tension: 0, // Straight line for goal
+                            type: 'line',
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            tension: 0,
                             fill: false,
-                            yAxisID: 'y', // Explicitly assign to 'y' axis
-                            order: 2, // Draw line on top of bars
-                            borderWidth: 2, // Make it a bit thicker for visibility
+                            yAxisID: 'y',
+                            order: 2,
+                            borderWidth: 2,
                         }
                     ]
                 },
@@ -220,46 +268,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: {
                             display: true,
                             text: 'Daily Steps vs. Goal',
-                            font: {
-                                size: 16
-                            },
-                            color: '#374151' // Tailwind gray-700
+                            font: { size: 16 },
+                            color: '#374151'
                         },
                         legend: {
-                            labels: {
-                                color: '#4B5563' // Tailwind gray-600
-                            }
+                            labels: { color: '#4B5563' }
                         }
                     },
                     scales: {
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Date',
-                                color: '#4B5563'
-                            },
-                            ticks: {
-                                color: '#6B7280' // Tailwind gray-500
-                            },
-                            grid: {
-                                display: false // Hide grid lines for a cleaner bar chart look
-                            }
+                            title: { display: true, text: 'Date', color: '#4B5563' },
+                            ticks: { color: '#6B7280' },
+                            grid: { display: false }
                         },
                         y: {
-                            title: {
-                                display: true,
-                                text: 'Steps',
-                                color: '#4B5563'
-                            },
-                            ticks: {
-                                color: '#6B7280'
-                            },
-                            grid: {
-                                color: '#E5E7EB' // Tailwind gray-200
-                            },
+                            title: { display: true, text: 'Steps', color: '#4B5563' },
+                            ticks: { color: '#6B7280' },
+                            grid: { color: '#E5E7EB' },
                             beginAtZero: true,
-                            // Ensure the y-axis extends past the goal if needed
-                            suggestedMax: STEP_GOAL * 1.2 // Add some padding above the goal
+                            suggestedMax: STEP_GOAL * 1.2
                         }
                     }
                 }
@@ -267,53 +294,155 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Initialize the database and load existing steps when the page loads
+    /**
+     * Renders or updates the Chart.js graph for water with a goal line.
+     * @param {Array<{date: string, value: number}>} waterData - The water data to plot.
+     */
+    function renderWaterChart(waterData) {
+        const labels = waterData.map(entry => entry.date);
+        const water = waterData.map(entry => entry.value);
+        const goalLine = Array(waterData.length).fill(WATER_GOAL);
+
+        if (waterChartInstance) {
+            waterChartInstance.data.labels = labels;
+            waterChartInstance.data.datasets[0].data = water;
+            waterChartInstance.data.datasets[1].data = goalLine;
+            waterChartInstance.update();
+        } else {
+            waterChartInstance = new Chart(waterChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Daily Water (ml)',
+                            data: water,
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)', // Tailwind blue-500 with opacity
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1,
+                            yAxisID: 'y',
+                            categoryPercentage: 0.7,
+                            barPercentage: 0.8,
+                            borderRadius: 5,
+                            order: 1,
+                        },
+                        {
+                            label: `Goal (${WATER_GOAL} ml)`,
+                            data: goalLine,
+                            type: 'line',
+                            borderColor: 'rgb(239, 68, 68)', // Tailwind red-500
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            tension: 0,
+                            fill: false,
+                            yAxisID: 'y',
+                            order: 2,
+                            borderWidth: 2,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Water Intake vs. Goal',
+                            font: { size: 16 },
+                            color: '#374151'
+                        },
+                        legend: {
+                            labels: { color: '#4B5563' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Date', color: '#4B5563' },
+                            ticks: { color: '#6B7280' },
+                            grid: { display: false }
+                        },
+                        y: {
+                            title: { display: true, text: 'Water (ml)', color: '#4B5563' },
+                            ticks: { color: '#6B7280' },
+                            grid: { color: '#E5E7EB' },
+                            beginAtZero: true,
+                            suggestedMax: WATER_GOAL * 1.2
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Initialize the database and load existing data when the page loads
     openDatabase()
         .then(() => {
-            return getAllDailySteps();
-        })
-        .then((steps) => {
-            displaySteps(steps); // This will also call renderStepsChart
+            return displayProgress(); // Call the unified display function
         })
         .catch((error) => {
             console.error('Failed to initialize app:', error);
-            stepsList.innerHTML = '<li class="text-center text-red-500">Error loading data. Please try again.</li>';
-            // Also clear or hide the chart if there's an error
-            if (stepsChartInstance) {
-                stepsChartInstance.destroy();
-                stepsChartInstance = null;
-            }
-            stepsChartCanvas.style.display = 'none'; // Hide canvas on error
+            // Error messages already handled in displayProgress
         });
 
     // Event listener for the save button
-    saveStepsBtn.addEventListener('click', async () => {
+    saveDailyDataBtn.addEventListener('click', async () => {
         const steps = parseInt(stepsInput.value, 10);
+        const water = parseInt(waterInput.value, 10); // Get water input
         const today = formatDate(new Date());
 
-        if (isNaN(steps) || steps <= 0) {
-            // Simple validation: use a temporary message in the UI instead of alert()
-            stepsInput.value = ''; // Clear input
-            stepsInput.placeholder = 'Please enter a valid number of steps!';
-            setTimeout(() => {
-                stepsInput.placeholder = 'e.g., 7500';
-            }, 3000); // Clear message after 3 seconds
+        let hasError = false;
+
+        if (isNaN(steps) || steps < 0) { // Allow 0 steps
+            stepsInput.value = '';
+            stepsInput.placeholder = 'Valid steps needed!';
+            setTimeout(() => { stepsInput.placeholder = 'e.g., 7500'; }, 3000);
+            hasError = true;
+        }
+
+        if (isNaN(water) || water < 0) { // Allow 0 water
+            waterInput.value = '';
+            waterInput.placeholder = 'Valid water needed!';
+            setTimeout(() => { waterInput.placeholder = 'e.g., 2000'; }, 3000);
+            hasError = true;
+        }
+
+        if (hasError) {
             return;
         }
 
         try {
-            await saveDailySteps(today, steps);
-            stepsInput.value = ''; // Clear input after saving
-            const updatedSteps = await getAllDailySteps();
-            displaySteps(updatedSteps); // This will also call renderStepsChart
+            // Save steps data if input is not empty
+            if (stepsInput.value !== '') {
+                await saveDailyData(STEPS_STORE_NAME, today, steps);
+                stepsInput.value = ''; // Clear input after saving
+            }
+
+            // Save water data if input is not empty
+            if (waterInput.value !== '') {
+                await saveDailyData(WATER_STORE_NAME, today, water);
+                waterInput.value = ''; // Clear input after saving
+            }
+
+            // If both inputs were empty, show a message
+            if (stepsInput.value === '' && waterInput.value === '') {
+                // This case should ideally be caught by the hasError check if values are invalid.
+                // If they are valid but empty (user cleared them), then no save happens.
+                // For now, we assume valid numbers are entered or left untouched.
+            }
+
+            const updatedSteps = await getAllDailyData(STEPS_STORE_NAME);
+            const updatedWater = await getAllDailyData(WATER_STORE_NAME);
+
+            displayProgress(); // Re-render all data and charts
+
         } catch (error) {
-            console.error('Error saving steps:', error);
-            // Display error message to the user
+            console.error('Error saving daily data:', error);
             const errorMessage = document.createElement('li');
             errorMessage.className = 'text-center text-red-500';
-            errorMessage.textContent = 'Failed to save steps. Please try again.';
-            stepsList.prepend(errorMessage); // Add to top of list
-            setTimeout(() => errorMessage.remove(), 5000); // Remove after 5 seconds
+            errorMessage.textContent = 'Failed to save data. Please try again.';
+            stepsList.prepend(errorMessage); // Add to top of steps list
+            setTimeout(() => errorMessage.remove(), 5000);
         }
     });
 });
