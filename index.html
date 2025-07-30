@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step Tracker PWA</title>
+    <!-- Link to Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Theme color for browser UI -->
+    <meta name="theme-color" content="#4F46E5"/>
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+    <div class="container bg-white p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Daily Step Tracker</h1>
+
+        <div class="mb-6">
+            <label for="stepsInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Steps:</label>
+            <input type="number" id="stepsInput" placeholder="e.g., 7500"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+
+        <button id="saveStepsBtn"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+            Save Steps
+        </button>
+
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days:</h2>
+            <ul id="stepsList" class="space-y-3">
+                <!-- Steps will be loaded here by JavaScript -->
+                <li class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
+                    <span class="font-medium text-indigo-800">Loading...</span>
+                    <span class="text-sm text-indigo-600"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main JavaScript file -->
+    <script src="index.js"></script>
+    <!-- Service Worker Registration -->
+    <script>
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
