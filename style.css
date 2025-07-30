@@ -1,0 +1,95 @@
+/* Custom styles to complement Tailwind CSS */
+
+/* Apply Inter font family */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Basic styling for the body to center content */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f3f4f6; /* Tailwind gray-100 */
+}
+
+/* Container for the app content */
+.container {
+    background-color: #ffffff; /* Tailwind white */
+    padding: 2rem; /* Tailwind p-8 */
+    border-radius: 0.75rem; /* Tailwind rounded-xl */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Tailwind shadow-lg */
+    width: 100%;
+    max-width: 28rem; /* Tailwind max-w-md */
+    margin: 1rem; /* Tailwind mx-4 */
+}
+
+/* Input field styling */
+input[type="number"] {
+    border-width: 1px;
+    border-color: #d1d5db; /* Tailwind border-gray-300 */
+    padding: 0.75rem 1rem; /* Tailwind py-3 px-4 */
+    border-radius: 0.5rem; /* Tailwind rounded-lg */
+    transition: all 0.2s ease-in-out;
+}
+
+input[type="number"]:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 2px #6366f1; /* Tailwind focus:ring-2 focus:ring-indigo-500 */
+}
+
+/* Button styling */
+button {
+    background-color: #4f46e5; /* Tailwind bg-indigo-600 */
+    color: #ffffff; /* Tailwind text-white */
+    font-weight: 700; /* Tailwind font-bold */
+    padding: 0.75rem 1rem; /* Tailwind py-3 px-4 */
+    border-radius: 0.5rem; /* Tailwind rounded-lg */
+    transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+    background-color: #4338ca; /* Tailwind hover:bg-indigo-700 */
+    transform: scale(1.02); /* Tailwind hover:scale-105 */
+}
+
+button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #6366f1, 0 0 0 4px rgba(99, 102, 241, 0.5); /* Tailwind focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 */
+}
+
+/* List item styling */
+#stepsList li {
+    background-color: #eef2ff; /* Tailwind bg-indigo-50 */
+    padding: 0.75rem; /* Tailwind p-3 */
+    border-radius: 0.5rem; /* Tailwind rounded-lg */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#stepsList li span:first-child {
+    font-weight: 500; /* Tailwind font-medium */
+    color: #3730a3; /* Tailwind text-indigo-800 */
+}
+
+#stepsList li span:last-child {
+    font-size: 0.875rem; /* Tailwind text-sm */
+    color: #4f46e5; /* Tailwind text-indigo-600 */
+}
+
+/* Animation for loading state */
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: .5;
+    }
+}
