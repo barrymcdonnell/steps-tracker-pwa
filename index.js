@@ -165,7 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStepsChart(stepsData) {
         const labels = stepsData.map(entry => entry.date);
         const steps = stepsData.map(entry => entry.steps);
-        const goalLine = Array(stepsData.length).fill(STEP_GOAL); // Create an array for the goal line
+        // Create an array for the goal line, ensuring it spans all data points
+        const goalLine = Array(stepsData.length).fill(STEP_GOAL);
 
         if (stepsChartInstance) {
             // If chart already exists, update its data
@@ -176,23 +177,24 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Create a new chart instance
             stepsChartInstance = new Chart(stepsChartCanvas, {
-                type: 'line',
+                type: 'bar', // Changed to bar chart
                 data: {
                     labels: labels,
                     datasets: [
                         {
                             label: 'Daily Steps',
                             data: steps,
-                            borderColor: 'rgb(79, 70, 229)', // Tailwind indigo-600
-                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
-                            tension: 0.3,
-                            fill: true
+                            backgroundColor: 'rgba(79, 70, 229, 0.8)', // Tailwind indigo-600 with opacity
+                            borderColor: 'rgb(79, 70, 229)',
+                            borderWidth: 1,
+                            // Bar charts naturally position data off the axis line
                         },
                         {
                             label: `Goal (${STEP_GOAL} steps)`,
                             data: goalLine,
+                            type: 'line', // Explicitly set type to line for overlay
                             borderColor: 'rgb(239, 68, 68)', // Tailwind red-500
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)', // More transparent for line
                             borderDash: [5, 5], // Dashed line for goal
                             pointRadius: 0, // No points for goal line
                             tension: 0, // Straight line for goal
@@ -229,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 color: '#6B7280' // Tailwind gray-500
                             },
                             grid: {
-                                color: '#E5E7EB' // Tailwind gray-200
+                                display: false // Hide grid lines for a cleaner bar chart look
                             }
                         },
                         y: {
@@ -242,9 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 color: '#6B7280'
                             },
                             grid: {
-                                color: '#E5E7EB'
+                                color: '#E5E7EB' // Tailwind gray-200
                             },
-                            beginAtZero: true
+                            beginAtZero: true,
+                            // Ensure the y-axis extends past the goal if needed
+                            suggestedMax: STEP_GOAL * 1.2 // Add some padding above the goal
                         }
                     }
                 }
