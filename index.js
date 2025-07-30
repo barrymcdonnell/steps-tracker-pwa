@@ -2,12 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const stepsInput = document.getElementById('stepsInput');
     const saveStepsBtn = document.getElementById('saveStepsBtn');
     const stepsList = document.getElementById('stepsList');
+    const stepsChartCanvas = document.getElementById('stepsChart');
 
     // IndexedDB constants
     const DB_NAME = 'stepTrackerDB';
     const DB_VERSION = 1;
     const STORE_NAME = 'dailySteps';
     let db; // Variable to hold the IndexedDB instance
+    let stepsChartInstance; // Variable to hold the Chart.js instance
+
+    // Hardcoded step goal
+    const STEP_GOAL = 8000;
 
     /**
      * Opens the IndexedDB database. If it doesn't exist, it creates it
@@ -114,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Displays the steps data in the UI.
+     * Displays the steps data in the UI list and updates the chart.
      * @param {Array<{date: string, steps: number}>} stepsData - An array of step entries.
      */
     function displaySteps(stepsData) {
@@ -130,12 +135,120 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < displayCount; i++) {
             const entry = stepsData[i];
             const listItem = document.createElement('li');
-            listItem.className = 'bg-indigo-50 p-3 rounded-lg flex justify-between items-center';
+            let goalStatusClass = '';
+            let goalStatusText = '';
+
+            if (entry.steps >= STEP_GOAL) {
+                goalStatusClass = 'bg-green-100 text-green-800'; // Goal met
+                goalStatusText = '✅ Goal Met!';
+            } else {
+                goalStatusClass = 'bg-red-100 text-red-800'; // Goal not met
+                goalStatusText = '❌ Goal Not Met';
+            }
+
+            listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
             listItem.innerHTML = `
-                <span class="font-medium text-indigo-800">${entry.date}</span>
-                <span class="text-sm text-indigo-600">${entry.steps} steps</span>
+                <span class="font-medium">${entry.date}</span>
+                <span class="text-sm">${entry.steps} steps (${goalStatusText})</span>
             `;
             stepsList.appendChild(listItem);
+        }
+
+        // Render the chart with the updated data
+        renderStepsChart(stepsData.slice(0, displayCount).reverse()); // Reverse to show oldest first on chart
+    }
+
+    /**
+     * Renders or updates the Chart.js graph with steps data and a goal line.
+     * @param {Array<{date: string, steps: number}>} stepsData - The steps data to plot.
+     */
+    function renderStepsChart(stepsData) {
+        const labels = stepsData.map(entry => entry.date);
+        const steps = stepsData.map(entry => entry.steps);
+        const goalLine = Array(stepsData.length).fill(STEP_GOAL); // Create an array for the goal line
+
+        if (stepsChartInstance) {
+            // If chart already exists, update its data
+            stepsChartInstance.data.labels = labels;
+            stepsChartInstance.data.datasets[0].data = steps;
+            stepsChartInstance.data.datasets[1].data = goalLine;
+            stepsChartInstance.update();
+        } else {
+            // Create a new chart instance
+            stepsChartInstance = new Chart(stepsChartCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Daily Steps',
+                            data: steps,
+                            borderColor: 'rgb(79, 70, 229)', // Tailwind indigo-600
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: `Goal (${STEP_GOAL} steps)`,
+                            data: goalLine,
+                            borderColor: 'rgb(239, 68, 68)', // Tailwind red-500
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderDash: [5, 5], // Dashed line for goal
+                            pointRadius: 0, // No points for goal line
+                            tension: 0, // Straight line for goal
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Daily Steps vs. Goal',
+                            font: {
+                                size: 16
+                            },
+                            color: '#374151' // Tailwind gray-700
+                        },
+                        legend: {
+                            labels: {
+                                color: '#4B5563' // Tailwind gray-600
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: '#4B5563'
+                            },
+                            ticks: {
+                                color: '#6B7280' // Tailwind gray-500
+                            },
+                            grid: {
+                                color: '#E5E7EB' // Tailwind gray-200
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Steps',
+                                color: '#4B5563'
+                            },
+                            ticks: {
+                                color: '#6B7280'
+                            },
+                            grid: {
+                                color: '#E5E7EB'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -145,11 +258,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return getAllDailySteps();
         })
         .then((steps) => {
-            displaySteps(steps);
+            displaySteps(steps); // This will also call renderStepsChart
         })
         .catch((error) => {
             console.error('Failed to initialize app:', error);
             stepsList.innerHTML = '<li class="text-center text-red-500">Error loading data. Please try again.</li>';
+            // Also clear or hide the chart if there's an error
+            if (stepsChartInstance) {
+                stepsChartInstance.destroy();
+                stepsChartInstance = null;
+            }
+            stepsChartCanvas.style.display = 'none'; // Hide canvas on error
         });
 
     // Event listener for the save button
@@ -171,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await saveDailySteps(today, steps);
             stepsInput.value = ''; // Clear input after saving
             const updatedSteps = await getAllDailySteps();
-            displaySteps(updatedSteps);
+            displaySteps(updatedSteps); // This will also call renderStepsChart
         } catch (error) {
             console.error('Error saving steps:', error);
             // Display error message to the user
