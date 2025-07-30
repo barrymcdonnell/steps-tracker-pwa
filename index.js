@@ -387,52 +387,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listener for the save button
     saveDailyDataBtn.addEventListener('click', async () => {
-        const steps = parseInt(stepsInput.value, 10);
-        const water = parseInt(waterInput.value, 10); // Get water input
+        const stepsValue = stepsInput.value; // Get raw string value
+        const waterValue = waterInput.value; // Get raw string value
         const today = formatDate(new Date());
 
-        let hasError = false;
+        let stepsToSave = null;
+        let waterToSave = null;
+        let anyDataToSave = false;
 
-        if (isNaN(steps) || steps < 0) { // Allow 0 steps
-            stepsInput.value = '';
-            stepsInput.placeholder = 'Valid steps needed!';
-            setTimeout(() => { stepsInput.placeholder = 'e.g., 7500'; }, 3000);
-            hasError = true;
+        // Validate and parse steps
+        if (stepsValue !== '') {
+            const parsedSteps = parseInt(stepsValue, 10);
+            if (isNaN(parsedSteps) || parsedSteps < 0) {
+                stepsInput.value = '';
+                stepsInput.placeholder = 'Invalid steps!';
+                setTimeout(() => { stepsInput.placeholder = 'e.g., 7500'; }, 3000);
+            } else {
+                stepsToSave = parsedSteps;
+                anyDataToSave = true;
+            }
         }
 
-        if (isNaN(water) || water < 0) { // Allow 0 water
-            waterInput.value = '';
-            waterInput.placeholder = 'Valid water needed!';
-            setTimeout(() => { waterInput.placeholder = 'e.g., 2000'; }, 3000);
-            hasError = true;
+        // Validate and parse water
+        if (waterValue !== '') {
+            const parsedWater = parseInt(waterValue, 10);
+            if (isNaN(parsedWater) || parsedWater < 0) {
+                waterInput.value = '';
+                waterInput.placeholder = 'Invalid water!';
+                setTimeout(() => { waterInput.placeholder = 'e.g., 2000'; }, 3000);
+            } else {
+                waterToSave = parsedWater;
+                anyDataToSave = true;
+            }
         }
 
-        if (hasError) {
-            return;
+        if (!anyDataToSave) {
+            // Only show this message if both fields were either empty or invalid
+            const errorMessage = document.createElement('li');
+            errorMessage.className = 'text-center text-red-500';
+            errorMessage.textContent = 'Please enter valid steps or water intake to save.';
+            stepsList.prepend(errorMessage);
+            setTimeout(() => errorMessage.remove(), 5000);
+            return; // Exit if nothing valid to save
         }
 
         try {
-            // Save steps data if input is not empty
-            if (stepsInput.value !== '') {
-                await saveDailyData(STEPS_STORE_NAME, today, steps);
+            if (stepsToSave !== null) {
+                await saveDailyData(STEPS_STORE_NAME, today, stepsToSave);
                 stepsInput.value = ''; // Clear input after saving
             }
 
-            // Save water data if input is not empty
-            if (waterInput.value !== '') {
-                await saveDailyData(WATER_STORE_NAME, today, water);
+            if (waterToSave !== null) {
+                await saveDailyData(WATER_STORE_NAME, today, waterToSave);
                 waterInput.value = ''; // Clear input after saving
             }
-
-            // If both inputs were empty, show a message
-            if (stepsInput.value === '' && waterInput.value === '') {
-                // This case should ideally be caught by the hasError check if values are invalid.
-                // If they are valid but empty (user cleared them), then no save happens.
-                // For now, we assume valid numbers are entered or left untouched.
-            }
-
-            const updatedSteps = await getAllDailyData(STEPS_STORE_NAME);
-            const updatedWater = await getAllDailyData(WATER_STORE_NAME);
 
             displayProgress(); // Re-render all data and charts
 
@@ -441,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const errorMessage = document.createElement('li');
             errorMessage.className = 'text-center text-red-500';
             errorMessage.textContent = 'Failed to save data. Please try again.';
-            stepsList.prepend(errorMessage); // Add to top of steps list
+            stepsList.prepend(errorMessage);
             setTimeout(() => errorMessage.remove(), 5000);
         }
     });
