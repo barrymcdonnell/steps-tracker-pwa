@@ -195,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             categoryPercentage: 0.7, // Controls the space between categories (bars)
                             barPercentage: 0.8,      // Controls the width of the bar within its category
                             borderRadius: 5,         // Added for rounded bar tops
+                            order: 1, // Draw bars first
                         },
                         {
                             label: `Goal (${STEP_GOAL} steps)`,
@@ -207,6 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             tension: 0, // Straight line for goal
                             fill: false,
                             yAxisID: 'y', // Explicitly assign to 'y' axis
+                            order: 2, // Draw line on top of bars
+                            borderWidth: 2, // Make it a bit thicker for visibility
                         }
                     ]
                 },
