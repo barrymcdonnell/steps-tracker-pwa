@@ -26,9 +26,15 @@
                    class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
         </div>
 
-        <div class="mb-6">
+        <div class="mb-4">
             <label for="waterInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Water (ml):</label>
             <input type="number" id="waterInput" placeholder="e.g., 2000"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+
+        <div class="mb-6">
+            <label for="caloriesInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Calories:</label>
+            <input type="number" id="caloriesInput" placeholder="e.g., 1730"
                    class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
         </div>
 
@@ -73,9 +79,27 @@
             </div>
         </div>
 
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Calories):</h2>
+            <ul id="caloriesList" class="space-y-3">
+                <!-- Calories will be loaded here by JavaScript -->
+                <li class="bg-orange-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
+                    <span class="font-medium text-orange-800">Loading...</span>
+                    <span class="text-sm text-orange-600"></span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Calorie Intake Progress</h2>
+            <div class="relative h-64">
+                <canvas id="caloriesChart"></canvas>
+            </div>
+        </div>
+
         <!-- App Version Text -->
         <div class="mt-8 text-center text-gray-500 text-xs">
-            App Version: <span id="appVersion">1.1.0</span>
+            App Version: <span id="appVersion">1.2.0</span>
         </div>
     </div>
 
