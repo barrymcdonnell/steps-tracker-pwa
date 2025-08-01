@@ -20,107 +20,142 @@
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen font-sans">
 
-    <div class="container bg-white p-8 rounded-xl shadow-lg w-full max-w-md mx-4 mt-8 pb-20">
-        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Daily Habits Tracker</h1>
+    <!-- Main Content Wrapper -->
+    <div id="mainContentWrapper" class="w-full max-w-md mx-4 mt-8 pb-20">
 
-        <div class="mb-4">
-            <label for="stepsInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Steps:</label>
-            <input type="number" id="stepsInput" placeholder="e.g., 7500"
-                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
-        </div>
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="container bg-white p-8 rounded-xl shadow-lg mb-8">
+            <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Daily Habits Tracker</h1>
 
-        <div class="mb-4">
-            <label for="waterInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Water (ml):</label>
-            <input type="number" id="waterInput" placeholder="e.g., 2000"
-                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
-        </div>
+            <div class="mb-4">
+                <label for="stepsInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Steps:</label>
+                <input type="number" id="stepsInput" placeholder="e.g., 7500"
+                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+            </div>
 
-        <div class="mb-6">
-            <label for="caloriesInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Calories:</label>
-            <input type="number" id="caloriesInput" placeholder="e.g., 1730"
-                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
-        </div>
+            <div class="mb-4">
+                <label for="waterInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Water (ml):</label>
+                <input type="number" id="waterInput" placeholder="e.g., 2000"
+                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+            </div>
 
-        <button id="saveDailyDataBtn"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-            Save Daily Data
-        </button>
+            <div class="mb-6">
+                <label for="caloriesInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Today's Calories:</label>
+                <input type="number" id="caloriesInput" placeholder="e.g., 1730"
+                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+            </div>
 
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Steps):</h2>
-            <ul id="stepsList" class="space-y-3">
-                <!-- Steps will be loaded here by JavaScript -->
-                <li class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
-                    <span class="font-medium text-indigo-800">Loading...</span>
-                    <span class="text-sm text-indigo-600"></span>
-                </li>
-            </ul>
-        </div>
+            <button id="saveDailyDataBtn"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                Save Daily Data
+            </button>
 
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Steps Progress</h2>
-            <div class="relative h-64">
-                <canvas id="stepsChart"></canvas>
+            <!-- Daily Totals Summary on Dashboard -->
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Today's Summary</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="p-4 rounded-lg bg-indigo-100 flex flex-col items-center">
+                        <i class="fa-solid fa-shoe-prints text-3xl text-indigo-700 mb-2"></i>
+                        <p class="font-bold text-lg text-indigo-800" id="todaySteps">0</p>
+                        <p class="text-sm text-indigo-600">Steps</p>
+                        <p class="text-xs text-gray-600" id="todayStepsGoal"></p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-blue-100 flex flex-col items-center">
+                        <i class="fa-solid fa-droplet text-3xl text-blue-700 mb-2"></i>
+                        <p class="font-bold text-lg text-blue-800" id="todayWater">0</p>
+                        <p class="text-sm text-blue-600">Water (ml)</p>
+                        <p class="text-xs text-gray-600" id="todayWaterGoal"></p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-orange-100 flex flex-col items-center">
+                        <i class="fa-solid fa-fire text-3xl text-orange-700 mb-2"></i>
+                        <p class="font-bold text-lg text-orange-800" id="todayCalories">0</p>
+                        <p class="text-sm text-orange-600">Calories</p>
+                        <p class="text-xs text-gray-600" id="todayCaloriesGoal"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App Version Text -->
+            <div class="mt-8 text-center text-gray-500 text-xs">
+                App Version: <span id="appVersion">1.3.0</span>
             </div>
         </div>
 
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Water):</h2>
-            <ul id="waterList" class="space-y-3">
-                <!-- Water intake will be loaded here by JavaScript -->
-                <li class="bg-blue-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
-                    <span class="font-medium text-blue-800">Loading...</span>
-                    <span class="text-sm text-blue-600"></span>
-                </li>
-            </ul>
-        </div>
+        <!-- Tracking View (Initially Hidden) -->
+        <div id="trackingView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
+            <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Tracking Details</h1>
 
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Water Intake Progress</h2>
-            <div class="relative h-64">
-                <canvas id="waterChart"></canvas>
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Steps):</h2>
+                <ul id="stepsList" class="space-y-3">
+                    <!-- Steps will be loaded here by JavaScript -->
+                    <li class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
+                        <span class="font-medium text-indigo-800">Loading...</span>
+                        <span class="text-sm text-indigo-600"></span>
+                    </li>
+                </ul>
             </div>
-        </div>
 
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Calories):</h2>
-            <ul id="caloriesList" class="space-y-3">
-                <!-- Calories will be loaded here by JavaScript -->
-                <li class="bg-orange-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
-                    <span class="font-medium text-orange-800">Loading...</span>
-                    <span class="text-sm text-orange-600"></span>
-                </li>
-            </ul>
-        </div>
-
-        <div class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Calorie Intake Progress</h2>
-            <div class="relative h-64">
-                <canvas id="caloriesChart"></canvas>
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Steps Progress</h2>
+                <div class="relative h-64">
+                    <canvas id="stepsChart"></canvas>
+                </div>
             </div>
-        </div>
 
-        <!-- App Version Text -->
-        <div class="mt-8 text-center text-gray-500 text-xs">
-            App Version: <span id="appVersion">1.2.0</span>
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Water):</h2>
+                <ul id="waterList" class="space-y-3">
+                    <!-- Water intake will be loaded here by JavaScript -->
+                    <li class="bg-blue-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
+                        <span class="font-medium text-blue-800">Loading...</span>
+                        <span class="text-sm text-blue-600"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Water Intake Progress</h2>
+                <div class="relative h-64">
+                    <canvas id="waterChart"></canvas>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Last 7 Days (Calories):</h2>
+                <ul id="caloriesList" class="space-y-3">
+                    <!-- Calories will be loaded here by JavaScript -->
+                    <li class="bg-orange-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
+                        <span class="font-medium text-orange-800">Loading...</span>
+                        <span class="text-sm text-orange-600"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="mt-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Calorie Intake Progress</h2>
+                <div class="relative h-64">
+                    <canvas id="caloriesChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Navigation Bar (Bottom) -->
     <nav class="bg-indigo-700 text-white p-2 w-full fixed bottom-0 left-0 z-10 flex justify-around items-center shadow-md">
-        <a href="#" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+        <a href="#dashboard" id="navDashboard" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base active-nav-link">
             <i class="fa-solid fa-house text-xl sm:text-2xl"></i>
             <span>Dashboard</span>
         </a>
-        <a href="#" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+        <a href="#tracking" id="navTracking" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-chart-line text-xl sm:text-2xl"></i>
             <span>Tracking</span>
         </a>
-        <a href="#" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+        <a href="#" id="navWorkouts" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-dumbbell text-xl sm:text-2xl"></i>
             <span>Workouts</span>
         </a>
-        <a href="#" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+        <a href="#" id="navMore" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-ellipsis text-xl sm:text-2xl"></i>
             <span>More</span>
         </a>
@@ -145,3 +180,211 @@
     </script>
 </body>
 </html>
+```
+
+---
+
+Now, we need to update your JavaScript files to handle the new view structure and display the daily summary.
+
+### `main.js` (Updated)
+
+This file will now manage the visibility of the different views and orchestrate the data display.
+
+
+```javascript
+// main.js
+import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
+import { formatDate } from './utils.js';
+import { displayProgress, displayDashboardSummary } from './display.js'; // Import displayDashboardSummary
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const stepsInput = document.getElementById('stepsInput');
+    const waterInput = document.getElementById('waterInput');
+    const caloriesInput = document.getElementById('caloriesInput');
+    const saveDailyDataBtn = document.getElementById('saveDailyDataBtn');
+
+    // Dashboard Summary Elements
+    const todayStepsElement = document.getElementById('todaySteps');
+    const todayWaterElement = document.getElementById('todayWater');
+    const todayCaloriesElement = document.getElementById('todayCalories');
+    const todayStepsGoalElement = document.getElementById('todayStepsGoal');
+    const todayWaterGoalElement = document.getElementById('todayWaterGoal');
+    const todayCaloriesGoalElement = document.getElementById('todayCaloriesGoal');
+
+    // Tracking View Elements
+    const stepsList = document.getElementById('stepsList');
+    const waterList = document.getElementById('waterList');
+    const caloriesList = document.getElementById('caloriesList');
+    const stepsChartCanvas = document.getElementById('stepsChart');
+    const waterChartCanvas = document.getElementById('waterChart');
+    const caloriesChartCanvas = document.getElementById('caloriesChart');
+    const appVersionSpan = document.getElementById('appVersion');
+
+    // View Containers
+    const dashboardView = document.getElementById('dashboardView');
+    const trackingView = document.getElementById('trackingView');
+
+    // Navigation Links
+    const navDashboard = document.getElementById('navDashboard');
+    const navTracking = document.getElementById('navTracking');
+    const navWorkouts = document.getElementById('navWorkouts');
+    const navMore = document.getElementById('navMore');
+
+    // Set the app version
+    appVersionSpan.textContent = '1.3.0'; // Updated version for new feature
+
+    // Function to show a specific view and update active nav link
+    function showView(viewToShow, activeNavLink) {
+        dashboardView.classList.add('hidden');
+        trackingView.classList.add('hidden');
+        // Add more views here as you add them
+
+        viewToShow.classList.remove('hidden');
+
+        // Remove active class from all nav links
+        document.querySelectorAll('.active-nav-link').forEach(link => {
+            link.classList.remove('active-nav-link');
+            link.classList.remove('bg-indigo-600'); // Remove active background
+        });
+        // Add active class to the clicked nav link
+        if (activeNavLink) {
+            activeNavLink.classList.add('active-nav-link');
+            activeNavLink.classList.add('bg-indigo-600'); // Add active background
+        }
+    }
+
+    // Initial load logic
+    try {
+        await openDatabase(); // Initialize the database
+        // Display dashboard summary on initial load
+        await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+        showView(dashboardView, navDashboard); // Show dashboard by default
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
+        const mainContentWrapper = document.getElementById('mainContentWrapper');
+        if (mainContentWrapper) {
+            mainContentWrapper.innerHTML = '<p class="text-center text-red-500 text-lg font-semibold mt-8">Failed to load the app. Please check your browser console for details.</p>';
+        }
+    }
+
+    // Navigation Link Event Listeners
+    navDashboard.addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(dashboardView, navDashboard);
+        // Re-render dashboard summary if needed (e.g., if data changed while on another tab)
+        displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+    });
+
+    navTracking.addEventListener('click', (e) => {
+        e.preventDefault();
+        showView(trackingView, navTracking);
+        // Re-render tracking details when navigating to it
+        displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
+    });
+
+    // Event listener for the save button
+    saveDailyDataBtn.addEventListener('click', async () => {
+        const stepsValue = stepsInput.value;
+        const waterValue = waterInput.value;
+        const caloriesValue = caloriesInput.value;
+        const today = formatDate(new Date());
+
+        let stepsToSave = null;
+        let waterToSave = null;
+        let caloriesToSave = null;
+        let anyDataToSave = false;
+
+        // Validate and parse steps
+        if (stepsValue !== '') {
+            const parsedSteps = parseInt(stepsValue, 10);
+            if (isNaN(parsedSteps) || parsedSteps < 0) {
+                stepsInput.value = '';
+                stepsInput.placeholder = 'Invalid steps!';
+                setTimeout(() => { stepsInput.placeholder = 'e.g., 7500'; }, 3000);
+            } else {
+                stepsToSave = parsedSteps;
+                anyDataToSave = true;
+            }
+        }
+
+        // Validate and parse water
+        if (waterValue !== '') {
+            const parsedWater = parseInt(waterValue, 10);
+            if (isNaN(parsedWater) || parsedWater < 0) {
+                waterInput.value = '';
+                waterInput.placeholder = 'Invalid water!';
+                setTimeout(() => { waterInput.placeholder = 'e.g., 2000'; }, 3000);
+            } else {
+                waterToSave = parsedWater;
+                anyDataToSave = true;
+            }
+        }
+
+        // Validate and parse calories
+        if (caloriesValue !== '') {
+            const parsedCalories = parseInt(caloriesValue, 10);
+            if (isNaN(parsedCalories) || parsedCalories < 0) {
+                caloriesInput.value = '';
+                caloriesInput.placeholder = 'Invalid calories!';
+                setTimeout(() => { caloriesInput.placeholder = 'e.g., 1730'; }, 3000);
+            } else {
+                caloriesToSave = parsedCalories;
+                anyDataToSave = true;
+            }
+        }
+
+        if (!anyDataToSave) {
+            const errorMessage = document.createElement('li');
+            errorMessage.className = 'text-center text-red-500';
+            errorMessage.textContent = 'Please enter valid data for steps, water, or calories to save.';
+            // Prepend to stepsList (now in tracking view, but can be a general message area)
+            // For dashboard, we need a different error display. Let's use a general message div.
+            const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6'); // Target an existing div near the inputs
+            const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
+            if (currentError) currentError.remove(); // Remove previous error if exists
+
+            const tempError = document.createElement('p');
+            tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
+            tempError.textContent = 'Please enter valid data for steps, water, or calories to save.';
+            dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling); // Insert after the save button div
+            setTimeout(() => tempError.remove(), 5000);
+            return;
+        }
+
+        try {
+            if (stepsToSave !== null) {
+                await saveDailyData(STEPS_STORE_NAME, today, stepsToSave);
+                stepsInput.value = '';
+            }
+
+            if (waterToSave !== null) {
+                await saveDailyData(WATER_STORE_NAME, today, waterToSave);
+                waterInput.value = '';
+            }
+
+            if (caloriesToSave !== null) {
+                await saveDailyData(CALORIES_STORE_NAME, today, caloriesToSave);
+                caloriesInput.value = '';
+            }
+
+            // Re-render dashboard summary after saving
+            await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+            // If currently on tracking view, also update it
+            if (!trackingView.classList.contains('hidden')) {
+                await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
+            }
+
+        } catch (error) {
+            console.error('Error saving daily data:', error);
+            const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6');
+            const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
+            if (currentError) currentError.remove();
+
+            const tempError = document.createElement('p');
+            tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
+            tempError.textContent = 'Failed to save data. Please try again.';
+            dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling);
+            setTimeout(() => tempError.remove(), 5000);
+        }
+    });
+});
