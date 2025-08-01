@@ -1,8 +1,9 @@
 // db.js
 const DB_NAME = 'dailyHabitsDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3; // Increment version to trigger onupgradeneeded for new store
 export const STEPS_STORE_NAME = 'dailySteps';
 export const WATER_STORE_NAME = 'dailyWater';
+export const CALORIES_STORE_NAME = 'dailyCalories'; // New object store name
 
 let db; // Variable to hold the IndexedDB instance
 
@@ -30,6 +31,12 @@ export function openDatabase() {
                 db.createObjectStore(WATER_STORE_NAME, { keyPath: 'date' });
                 console.log('IndexedDB: Water object store created.');
             }
+
+            // Create calories object store if it doesn't exist
+            if (!db.objectStoreNames.contains(CALORIES_STORE_NAME)) {
+                db.createObjectStore(CALORIES_STORE_NAME, { keyPath: 'date' });
+                console.log('IndexedDB: Calories object store created.');
+            }
         };
 
         request.onsuccess = (event) => {
@@ -47,9 +54,9 @@ export function openDatabase() {
 
 /**
  * Saves or updates daily data in IndexedDB for a specific store.
- * @param {string} storeName - The name of the object store ('dailySteps' or 'dailyWater').
+ * @param {string} storeName - The name of the object store ('dailySteps', 'dailyWater', or 'dailyCalories').
  * @param {string} date - The date in YYYY-MM-DD format.
- * @param {number} value - The number of steps or water intake.
+ * @param {number} value - The number of steps, water intake, or calories.
  * @returns {Promise<void>} A promise that resolves when the data is saved.
  */
 export function saveDailyData(storeName, date, value) {
@@ -77,7 +84,7 @@ export function saveDailyData(storeName, date, value) {
 
 /**
  * Retrieves all daily data from IndexedDB for a specific store, sorted by date.
- * @param {string} storeName - The name of the object store ('dailySteps' or 'dailyWater').
+ * @param {string} storeName - The name of the object store ('dailySteps', 'dailyWater', or 'dailyCalories').
  * @returns {Promise<Array<{date: string, value: number}>>} A promise that resolves with an array of entries.
  */
 export function getAllDailyData(storeName) {
@@ -101,4 +108,3 @@ export function getAllDailyData(storeName) {
         };
     });
 }
-
