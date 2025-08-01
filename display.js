@@ -1,7 +1,7 @@
 // display.js
-import { getAllDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js'; // Import CALORIES_STORE_NAME
-import { renderStepsChart, renderWaterChart, renderCaloriesChart } from './charts.js'; // Import renderCaloriesChart
-import { STEP_GOAL, WATER_GOAL, CALORIE_GOAL } from './constants.js'; // Import CALORIE_GOAL
+import { getAllDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
+import { renderStepsChart, renderWaterChart, renderCaloriesChart } from './charts.js';
+import { STEP_GOAL, WATER_GOAL, CALORIE_GOAL } from './constants.js';
 
 /**
  * Displays the progress data in the UI lists and updates the charts.
@@ -9,14 +9,14 @@ import { STEP_GOAL, WATER_GOAL, CALORIE_GOAL } from './constants.js'; // Import 
  * @param {HTMLElement} waterListElement - The ul element for water.
  * @param {HTMLCanvasElement} stepsChartCanvasElement - The canvas element for steps chart.
  * @param {HTMLCanvasElement} waterChartCanvasElement - The canvas element for water chart.
- * @param {HTMLElement} caloriesListElement - The ul element for calories. // New parameter
- * @param {HTMLCanvasElement} caloriesChartCanvasElement - The canvas element for calories chart. // New parameter
+ * @param {HTMLElement} caloriesListElement - The ul element for calories.
+ * @param {HTMLCanvasElement} caloriesChartCanvasElement - The canvas element for calories chart.
  */
 export async function displayProgress(stepsListElement, waterListElement, stepsChartCanvasElement, waterChartCanvasElement, caloriesListElement, caloriesChartCanvasElement) {
     try {
         const stepsData = await getAllDailyData(STEPS_STORE_NAME);
         const waterData = await getAllDailyData(WATER_STORE_NAME);
-        const caloriesData = await getAllDailyData(CALORIES_STORE_NAME); // Fetch calorie data
+        const caloriesData = await getAllDailyData(CALORIES_STORE_NAME);
 
         // Display Steps List
         stepsListElement.innerHTML = '';
@@ -76,7 +76,7 @@ export async function displayProgress(stepsListElement, waterListElement, stepsC
             }
         }
 
-        // Display Calories List // New section for calories
+        // Display Calories List
         caloriesListElement.innerHTML = '';
         if (caloriesData.length === 0) {
             caloriesListElement.innerHTML = '<li class="text-center text-gray-500">No calories recorded yet.</li>';
@@ -87,13 +87,14 @@ export async function displayProgress(stepsListElement, waterListElement, stepsC
                 const listItem = document.createElement('li');
                 let goalStatusClass = '';
                 let goalStatusText = '';
+                const caloriesDifference = CALORIE_GOAL - entry.value;
 
-                if (entry.value <= CALORIE_GOAL) { // Note: Calories goal is usually 'less than or equal to'
+                if (caloriesDifference >= 0) { // Calories consumed are less than or equal to goal
                     goalStatusClass = 'bg-green-100 text-green-800';
-                    goalStatusText = '✅ Goal Met!';
-                } else {
+                    goalStatusText = `✅ ${caloriesDifference} kcal left`;
+                } else { // Calories consumed are over the goal
                     goalStatusClass = 'bg-red-100 text-red-800';
-                    goalStatusText = '❌ Goal Exceeded';
+                    goalStatusText = `❌ ${Math.abs(caloriesDifference)} kcal over`;
                 }
 
                 listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
@@ -109,17 +110,15 @@ export async function displayProgress(stepsListElement, waterListElement, stepsC
         // Render Charts
         renderStepsChart(stepsChartCanvasElement, stepsData.slice(0, Math.min(stepsData.length, 7)).reverse());
         renderWaterChart(waterChartCanvasElement, waterData.slice(0, Math.min(waterData.length, 7)).reverse());
-        renderCaloriesChart(caloriesChartCanvasElement, caloriesData.slice(0, Math.min(caloriesData.length, 7)).reverse()); // Render calories chart
+        renderCaloriesChart(caloriesChartCanvasElement, caloriesData.slice(0, Math.min(caloriesData.length, 7)).reverse());
 
     } catch (error) {
         console.error('Failed to display progress:', error);
         stepsListElement.innerHTML = '<li class="text-center text-red-500">Error loading steps data.</li>';
         waterListElement.innerHTML = '<li class="text-center text-red-500">Error loading water data.</li>';
-        caloriesListElement.innerHTML = '<li class="text-center text-red-500">Error loading calories data.</li>'; // Error for calories
-        // Note: Chart instances are managed within charts.js, so we don't destroy them here.
-        // However, we can hide the canvases if there's an error.
+        caloriesListElement.innerHTML = '<li class="text-center text-red-500">Error loading calories data.</li>';
         stepsChartCanvasElement.style.display = 'none';
         waterChartCanvasElement.style.display = 'none';
-        caloriesChartCanvasElement.style.display = 'none'; // Hide calories canvas on error
+        caloriesChartCanvasElement.style.display = 'none';
     }
 }
