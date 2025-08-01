@@ -1,25 +1,28 @@
 // main.js
-import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME } from './db.js';
+import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js'; // Import CALORIES_STORE_NAME
 import { formatDate } from './utils.js';
 import { displayProgress } from './display.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const stepsInput = document.getElementById('stepsInput');
     const waterInput = document.getElementById('waterInput');
+    const caloriesInput = document.getElementById('caloriesInput'); // New calorie input
     const saveDailyDataBtn = document.getElementById('saveDailyDataBtn');
     const stepsList = document.getElementById('stepsList');
     const waterList = document.getElementById('waterList');
+    const caloriesList = document.getElementById('caloriesList'); // New calorie list
     const stepsChartCanvas = document.getElementById('stepsChart');
     const waterChartCanvas = document.getElementById('waterChart');
+    const caloriesChartCanvas = document.getElementById('caloriesChart'); // New calorie chart
     const appVersionSpan = document.getElementById('appVersion');
 
     // Set the app version
-    appVersionSpan.textContent = '1.1.0'; // Updated version for refactor
+    appVersionSpan.textContent = '1.2.0'; // Updated version for new feature
 
     try {
         await openDatabase(); // Initialize the database
-        // Pass DOM elements to displayProgress
-        await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas);
+        // Pass all relevant DOM elements to displayProgress
+        await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
     } catch (error) {
         console.error('Failed to initialize app:', error);
         // Display a general error if database cannot be opened or initial data cannot be loaded
@@ -33,10 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveDailyDataBtn.addEventListener('click', async () => {
         const stepsValue = stepsInput.value;
         const waterValue = waterInput.value;
+        const caloriesValue = caloriesInput.value; // Get raw string value for calories
         const today = formatDate(new Date());
 
         let stepsToSave = null;
         let waterToSave = null;
+        let caloriesToSave = null; // Variable for parsed calories
         let anyDataToSave = false;
 
         // Validate and parse steps
@@ -65,10 +70,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        // Validate and parse calories // New validation for calories
+        if (caloriesValue !== '') {
+            const parsedCalories = parseInt(caloriesValue, 10);
+            if (isNaN(parsedCalories) || parsedCalories < 0) { // Calories can be 0, but not negative
+                caloriesInput.value = '';
+                caloriesInput.placeholder = 'Invalid calories!';
+                setTimeout(() => { caloriesInput.placeholder = 'e.g., 1730'; }, 3000);
+            } else {
+                caloriesToSave = parsedCalories;
+                anyDataToSave = true;
+            }
+        }
+
         if (!anyDataToSave) {
             const errorMessage = document.createElement('li');
             errorMessage.className = 'text-center text-red-500';
-            errorMessage.textContent = 'Please enter valid steps or water intake to save.';
+            errorMessage.textContent = 'Please enter valid data for steps, water, or calories to save.';
+            // Prepend to stepsList as a general error display area
             stepsList.prepend(errorMessage);
             setTimeout(() => errorMessage.remove(), 5000);
             return;
@@ -85,8 +104,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 waterInput.value = '';
             }
 
+            if (caloriesToSave !== null) { // Save calories data
+                await saveDailyData(CALORIES_STORE_NAME, today, caloriesToSave);
+                caloriesInput.value = '';
+            }
+
             // Re-render all data and charts after saving
-            await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas);
+            await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
 
         } catch (error) {
             console.error('Error saving daily data:', error);
