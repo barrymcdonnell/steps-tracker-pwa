@@ -1,5 +1,5 @@
 // workoutDisplay.js
-import { saveDailyData, getAllDailyData, deleteItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME } from './db.js';
+import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME } from './db.js';
 import { EXERCISE_TYPES, WORKOUT_CATEGORIES, DEFAULT_EXERCISE_SETTINGS } from './workoutConstants.js';
 
 // DOM elements (will be dynamically assigned within renderWorkoutsView)
@@ -107,8 +107,8 @@ async function displayExercises() {
                 listItem.className = 'p-3 rounded-lg flex justify-between items-center bg-gray-100';
                 listItem.innerHTML = `
                     <span class="font-medium text-gray-800">${exercise.name}</span>
-                    <div class="flex items-center ml-auto"> <!-- Added this div for alignment -->
-                        <span class="text-sm text-gray-600 mr-4">${exercise.type}</span> <!-- Added mr-4 for spacing -->
+                    <div class="flex items-center ml-auto">
+                        <span class="text-sm text-gray-600 mr-4">${exercise.type}</span>
                         <button data-id="${exercise.id}" class="delete-exercise-btn text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
@@ -182,7 +182,7 @@ async function renderAddWorkoutForm() {
                 const checkboxDiv = document.createElement('div');
                 checkboxDiv.className = 'flex items-center';
                 checkboxDiv.innerHTML = `
-                    <input type="checkbox" id="exercise-${exercise.id}" value="${exercise.id}" data-name="${exercise.name}"
+                    <input type="checkbox" id="exercise-${exercise.id}" value="${exercise.id}" data-name="${exercise.name}" data-type="${exercise.type}"
                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500">
                     <label for="exercise-${exercise.id}" class="ml-2 text-gray-700">${exercise.name} (${exercise.type})</label>
                 `;
@@ -202,7 +202,7 @@ async function renderAddWorkoutForm() {
         const selectedExercises = Array.from(exerciseSelectionDiv.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => ({
             id: parseInt(checkbox.value, 10),
             name: checkbox.dataset.name,
-            // You might add default sets/reps/duration here or allow user to input them for each exercise in the workout
+            type: checkbox.dataset.type, // Include type for display in workout details
             sets: DEFAULT_EXERCISE_SETTINGS.SETS,
             reps: DEFAULT_EXERCISE_SETTINGS.REPS
         }));
@@ -269,9 +269,20 @@ async function displayWorkouts() {
                         <span class="font-medium text-gray-800">${workout.name}</span>
                         <p class="text-sm text-gray-600">${workout.category} - ${workout.exercises.length} exercises</p>
                     </div>
-                    <button data-id="${workout.id}" class="delete-workout-btn text-red-500 hover:text-red-700 ml-4"><i class="fa-solid fa-trash"></i></button>
+                    <div class="flex items-center space-x-2">
+                        <button data-id="${workout.id}" class="view-edit-workout-btn bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-1 px-3 rounded-md transition duration-200">View/Edit</button>
+                        <button data-id="${workout.id}" class="delete-workout-btn text-red-500 hover:text-red-700 text-lg"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 `;
                 currentWorkoutList.appendChild(listItem);
+            });
+
+            document.querySelectorAll('.view-edit-workout-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const workoutId = parseInt(e.currentTarget.dataset.id, 10);
+                    hideAllWorkoutSubSections();
+                    await renderWorkoutDetailsForm(workoutId);
+                });
             });
 
             document.querySelectorAll('.delete-workout-btn').forEach(button => {
@@ -290,6 +301,126 @@ async function displayWorkouts() {
         currentWorkoutList.innerHTML = '<li class="text-center text-red-500">Error loading workouts.</li>';
     }
 }
+
+/**
+ * Renders the form to view/edit a specific workout routine.
+ * @param {number} workoutId - The ID of the workout to view/edit.
+ */
+async function renderWorkoutDetailsForm(workoutId) {
+    if (!workoutSubSectionElement) return;
+
+    const workout = await getItemById(WORKOUTS_STORE_NAME, workoutId);
+    if (!workout) {
+        workoutSubSectionElement.innerHTML = '<p class="text-center text-red-500">Workout not found.</p>';
+        return;
+    }
+
+    // Fetch all exercises to populate the selection for adding/removing
+    const allExercises = await getAllDailyData(EXERCISES_STORE_NAME);
+
+    workoutSubSectionElement.innerHTML = `
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Edit Workout: ${workout.name}</h2>
+        <div class="mb-4">
+            <label for="editWorkoutNameInput" class="block text-gray-700 text-sm font-semibold mb-2">Workout Name:</label>
+            <input type="text" id="editWorkoutNameInput" value="${workout.name}"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+        <div class="mb-4">
+            <label for="editWorkoutCategorySelect" class="block text-gray-700 text-sm font-semibold mb-2">Category:</label>
+            <select id="editWorkoutCategorySelect"
+                    class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+                ${Object.values(WORKOUT_CATEGORIES).map(category =>
+                    `<option value="${category}" ${workout.category === category ? 'selected' : ''}>${category}</option>`
+                ).join('')}
+            </select>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-3">Exercises in this Workout:</h3>
+        <ul id="workoutExercisesList" class="space-y-2 mb-4 p-2 border rounded-lg bg-gray-50">
+            ${workout.exercises.length === 0 ? '<li class="text-center text-gray-500">No exercises in this workout.</li>' : ''}
+            ${workout.exercises.map(ex => `
+                <li class="flex justify-between items-center p-2 bg-white rounded-md">
+                    <span class="font-medium text-gray-800">${ex.name}</span>
+                    <span class="text-sm text-gray-600">${ex.type} - ${ex.sets} sets of ${ex.reps} reps</span>
+                </li>
+            `).join('')}
+        </ul>
+
+        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-3">Add/Remove Exercises:</h3>
+        <div id="editExerciseSelection" class="space-y-2 mb-4 p-2 border rounded-lg bg-gray-50">
+            ${allExercises.length === 0 ? '<p class="text-center text-gray-500">No exercises available to add.</p>' : ''}
+            ${allExercises.map(exercise => {
+                const isSelected = workout.exercises.some(ex => ex.id === exercise.id);
+                return `
+                    <div class="flex items-center">
+                        <input type="checkbox" id="edit-exercise-${exercise.id}" value="${exercise.id}" data-name="${exercise.name}" data-type="${exercise.type}"
+                               class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500" ${isSelected ? 'checked' : ''}>
+                        <label for="edit-exercise-${exercise.id}" class="ml-2 text-gray-700">${exercise.name} (${exercise.type})</label>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+
+        <button id="updateWorkoutBtn"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-4">
+            Save Changes
+        </button>
+        <button id="backToWorkoutsListBtn"
+                class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-2">
+            Back to Workouts List
+        </button>
+        <p id="editWorkoutFormMessage" class="text-center text-sm mt-2"></p>
+    `;
+
+    const editWorkoutNameInput = document.getElementById('editWorkoutNameInput');
+    const editWorkoutCategorySelect = document.getElementById('editWorkoutCategorySelect');
+    const editExerciseSelectionDiv = document.getElementById('editExerciseSelection');
+    const updateWorkoutBtn = document.getElementById('updateWorkoutBtn');
+    const backToWorkoutsListBtn = document.getElementById('backToWorkoutsListBtn');
+    const editWorkoutFormMessage = document.getElementById('editWorkoutFormMessage');
+
+    backToWorkoutsListBtn.addEventListener('click', async () => {
+        hideAllWorkoutSubSections();
+        await displayWorkouts();
+    });
+
+    updateWorkoutBtn.addEventListener('click', async () => {
+        const name = editWorkoutNameInput.value.trim();
+        const category = editWorkoutCategorySelect.value;
+        const selectedExercises = Array.from(editExerciseSelectionDiv.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => ({
+            id: parseInt(checkbox.value, 10),
+            name: checkbox.dataset.name,
+            type: checkbox.dataset.type,
+            sets: DEFAULT_EXERCISE_SETTINGS.SETS, // Retain default or allow editing later
+            reps: DEFAULT_EXERCISE_SETTINGS.REPS // Retain default or allow editing later
+        }));
+
+        if (!name) {
+            editWorkoutFormMessage.textContent = 'Workout name cannot be empty.';
+            editWorkoutFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+            return;
+        }
+        if (selectedExercises.length === 0) {
+            editWorkoutFormMessage.textContent = 'Please select at least one exercise for the workout.';
+            editWorkoutFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+            return;
+        }
+
+        try {
+            const updatedWorkout = { id: workoutId, name, category, exercises: selectedExercises };
+            await saveDailyData(WORKOUTS_STORE_NAME, updatedWorkout); // Use saveDailyData to update by ID
+            editWorkoutFormMessage.textContent = 'Workout updated successfully!';
+            editWorkoutFormMessage.className = 'text-center text-green-500 text-sm mt-2';
+            // Optionally, navigate back to list or stay on form
+            // await displayWorkouts();
+        } catch (error) {
+            console.error('Error updating workout:', error);
+            editWorkoutFormMessage.textContent = 'Failed to update workout. Please try again.';
+            editWorkoutFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+        }
+    });
+}
+
 
 /**
  * Renders the main Workouts view with options to add exercises/workouts or view them.
