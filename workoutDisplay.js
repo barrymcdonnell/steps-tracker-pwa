@@ -688,6 +688,9 @@ export async function renderWorkoutPlansView(viewElement) {
         hideAllWorkoutSubSections(); // Hide other workout sub-sections
         await displayWorkoutPlans();
     });
+
+    // Automatically display workout plans when the view is rendered
+    await displayWorkoutPlans();
 }
 
 /**
@@ -882,6 +885,50 @@ async function renderAddWorkoutPlanForm() {
 }
 
 /**
+ * Renders the detailed view of a specific workout plan.
+ * @param {number} planId - The ID of the workout plan to view.
+ */
+async function renderViewWorkoutPlanDetails(planId) {
+    if (!workoutPlansSubSectionElement) return;
+
+    const plan = await getItemById(WORKOUT_PLANS_STORE_NAME, planId);
+    if (!plan) {
+        workoutPlansSubSectionElement.innerHTML = '<p class="text-center text-red-500">Workout plan not found.</p>';
+        return;
+    }
+
+    workoutPlansSubSectionElement.innerHTML = `
+        <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Workout Plan: ${plan.name}</h2>
+        <div class="bg-gray-50 p-4 rounded-lg shadow-sm mb-6">
+            <p class="text-gray-700 mb-2"><strong class="font-semibold">Start Date:</strong> ${plan.startDate}</p>
+            <p class="text-gray-700"><strong class="font-semibold">Duration:</strong> ${plan.durationWeeks} weeks</p>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-3">Scheduled Workouts:</h3>
+        <ul class="space-y-3 p-2 border rounded-lg bg-white">
+            ${plan.scheduledWorkouts.length === 0 ? '<li class="text-center text-gray-500">No workouts scheduled for this plan.</li>' : ''}
+            ${plan.scheduledWorkouts.map(sw => `
+                <li class="flex justify-between items-center p-3 rounded-lg bg-indigo-50">
+                    <span class="font-medium text-indigo-800">${sw.dayOfWeek}</span>
+                    <span class="text-sm text-indigo-600">${sw.workoutName}</span>
+                </li>
+            `).join('')}
+        </ul>
+
+        <button id="backToWorkoutPlansListBtn"
+                class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-8">
+            Back to All Plans
+        </button>
+    `;
+
+    document.getElementById('backToWorkoutPlansListBtn').addEventListener('click', async () => {
+        hideAllWorkoutSubSections();
+        await displayWorkoutPlans();
+    });
+}
+
+
+/**
  * Displays the list of workout plans.
  */
 async function displayWorkoutPlans() {
@@ -940,14 +987,12 @@ async function displayWorkoutPlans() {
                 });
             });
 
-            // Add listener for the new View Details button (placeholder for now)
+            // Add listener for the new View Details button
             document.querySelectorAll('.view-plan-btn').forEach(button => {
                 button.addEventListener('click', async (e) => {
                     const planId = parseInt(e.currentTarget.dataset.id, 10);
-                    // For now, this just logs. In a future step, this will render an edit form.
-                    console.log('View/Edit Plan details for ID:', planId);
-                    // hideAllWorkoutSubSections();
-                    // await renderEditWorkoutPlanForm(planId); // Future function
+                    hideAllWorkoutSubSections();
+                    await renderViewWorkoutPlanDetails(planId);
                 });
             });
         }
