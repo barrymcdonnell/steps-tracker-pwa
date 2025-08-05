@@ -1,7 +1,8 @@
 // main.js
 import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
 import { formatDate } from './utils.js';
-import { displayProgress, displayDashboardSummary } from './display.js'; // Import displayDashboardSummary
+import { displayProgress, displayDashboardSummary } from './display.js';
+import { renderWorkoutsView } from './workoutDisplay.js'; // Import the new workout display function
 
 document.addEventListener('DOMContentLoaded', async () => {
     const stepsInput = document.getElementById('stepsInput');
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // View Containers
     const dashboardView = document.getElementById('dashboardView');
     const trackingView = document.getElementById('trackingView');
+    const workoutsView = document.getElementById('workoutsView'); // New workouts view container
 
     // Navigation Links
     const navDashboard = document.getElementById('navDashboard');
@@ -43,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function showView(viewToShow, activeNavLink) {
         dashboardView.classList.add('hidden');
         trackingView.classList.add('hidden');
+        workoutsView.classList.add('hidden'); // Hide workouts view
         // Add more views here as you add them
 
         viewToShow.classList.remove('hidden');
@@ -86,6 +89,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         showView(trackingView, navTracking);
         // Re-render tracking details when navigating to it
         displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
+    });
+
+    navWorkouts.addEventListener('click', async (e) => {
+        e.preventDefault();
+        showView(workoutsView, navWorkouts);
+        // Render the workouts view content
+        await renderWorkoutsView(workoutsView);
     });
 
     // Event listener for the save button
@@ -159,17 +169,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             if (stepsToSave !== null) {
-                await saveDailyData(STEPS_STORE_NAME, today, stepsToSave);
+                await saveDailyData(STEPS_STORE_NAME, { date: today, value: stepsToSave }); // Pass as object
                 stepsInput.value = '';
             }
 
             if (waterToSave !== null) {
-                await saveDailyData(WATER_STORE_NAME, today, waterToSave);
+                await saveDailyData(WATER_STORE_NAME, { date: today, value: waterToSave }); // Pass as object
                 waterInput.value = '';
             }
 
             if (caloriesToSave !== null) {
-                await saveDailyData(CALORIES_STORE_NAME, today, caloriesToSave);
+                await saveDailyData(CALORIES_STORE_NAME, { date: today, value: caloriesToSave }); // Pass as object
                 caloriesInput.value = '';
             }
 
