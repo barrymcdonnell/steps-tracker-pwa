@@ -1,12 +1,13 @@
 // db.js
 const DB_NAME = 'dailyHabitsDB';
-const DB_VERSION = 5; // Increment version for new workoutSessions store
+const DB_VERSION = 6; // Increment version for new workoutPlans store
 export const STEPS_STORE_NAME = 'dailySteps';
 export const WATER_STORE_NAME = 'dailyWater';
 export const CALORIES_STORE_NAME = 'dailyCalories';
-export const EXERCISES_STORE_NAME = 'exercises'; // New object store for individual exercises
-export const WORKOUTS_STORE_NAME = 'workouts'; // New object store for workout routines
-export const WORKOUT_SESSIONS_STORE_NAME = 'workoutSessions'; // New object store for completed workout sessions
+export const EXERCISES_STORE_NAME = 'exercises'; // Object store for individual exercises
+export const WORKOUTS_STORE_NAME = 'workouts'; // Object store for workout routines
+export const WORKOUT_SESSIONS_STORE_NAME = 'workoutSessions'; // Object store for completed workout sessions
+export const WORKOUT_PLANS_STORE_NAME = 'workoutPlans'; // New object store for workout plans
 
 let db; // Variable to hold the IndexedDB instance
 
@@ -41,26 +42,30 @@ export function openDatabase() {
                 console.log('IndexedDB: Calories object store created.');
             }
 
-            // New: Create exercises object store
+            // Create exercises object store
             if (!db.objectStoreNames.contains(EXERCISES_STORE_NAME)) {
-                // Exercises will be stored by a unique ID, which we'll generate
                 db.createObjectStore(EXERCISES_STORE_NAME, { keyPath: 'id', autoIncrement: true });
                 console.log('IndexedDB: Exercises object store created.');
             }
 
-            // New: Create workouts object store
+            // Create workouts object store
             if (!db.objectStoreNames.contains(WORKOUTS_STORE_NAME)) {
-                // Workouts will also be stored by a unique ID
                 db.createObjectStore(WORKOUTS_STORE_NAME, { keyPath: 'id', autoIncrement: true });
                 console.log('IndexedDB: Workouts object store created.');
             }
 
-            // New: Create workoutSessions object store for completed workouts
+            // Create workoutSessions object store for completed workouts
             if (!db.objectStoreNames.contains(WORKOUT_SESSIONS_STORE_NAME)) {
-                // Workout sessions will be stored by a unique ID, with an index on date for retrieval
                 const sessionStore = db.createObjectStore(WORKOUT_SESSIONS_STORE_NAME, { keyPath: 'id', autoIncrement: true });
                 sessionStore.createIndex('date', 'date', { unique: false }); // Index to query by date
                 console.log('IndexedDB: Workout Sessions object store created.');
+            }
+
+            // New: Create workoutPlans object store
+            if (!db.objectStoreNames.contains(WORKOUT_PLANS_STORE_NAME)) {
+                const planStore = db.createObjectStore(WORKOUT_PLANS_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                // We might add indexes later for querying by day or date range
+                console.log('IndexedDB: Workout Plans object store created.');
             }
         };
 
@@ -122,13 +127,12 @@ export function getAllDailyData(storeName) {
         const request = store.getAll();
 
         request.onsuccess = () => {
-            // Only sort if it's a daily tracking store (assuming 'date' keyPath)
+            // Only sort if it's a daily tracking store or workout sessions (assuming 'date' keyPath)
             if ([STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME].includes(storeName)) {
-                // For workout sessions, we also want to sort by date (most recent first)
                 const sortedData = request.result.sort((a, b) => new Date(b.date) - new Date(a.date));
                 resolve(sortedData);
             } else {
-                // For exercises/workouts, return as is or sort by name/ID if needed later
+                // For exercises/workouts/workout plans, return as is or sort by name/ID if needed later
                 resolve(request.result);
             }
         };
