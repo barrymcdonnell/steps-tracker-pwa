@@ -181,16 +181,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
         } catch (error) {
-            console.error('Error saving daily data:', error);
-            const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6');
-            const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
-            if (currentError) currentError.remove();
+                console.error('Error saving daily data:', error);
+                const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6');
+                const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
+                if (currentError) currentError.remove();
 
-            const tempError = document.createElement('p');
-            tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
-            tempError.textContent = 'Failed to save data. Please try again.';
-            dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling);
-            setTimeout(() => tempError.remove(), 5000);
+                const tempError = document.createElement('p');
+                tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
+                tempError.textContent = 'Failed to save data. Please try again.';
+                dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling);
+                setTimeout(() => tempError.remove(), 5000);
         }
     });
 });
