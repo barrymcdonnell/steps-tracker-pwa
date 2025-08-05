@@ -139,6 +139,12 @@
                 </div>
             </div>
         </div>
+
+        <!-- Workouts View (Initially Hidden) -->
+        <div id="workoutsView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
+            <!-- Content for workouts will be rendered here by workoutDisplay.js -->
+        </div>
+
     </div>
 
     <!-- Navigation Bar (Bottom) -->
@@ -151,7 +157,7 @@
             <i class="fa-solid fa-chart-line text-xl sm:text-2xl"></i>
             <span>Tracking</span>
         </a>
-        <a href="#" id="navWorkouts" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+        <a href="#workouts" id="navWorkouts" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-dumbbell text-xl sm:text-2xl"></i>
             <span>Workouts</span>
         </a>
