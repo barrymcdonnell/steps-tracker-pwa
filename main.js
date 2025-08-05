@@ -2,7 +2,7 @@
 import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
 import { formatDate } from './utils.js';
 import { displayProgress, displayDashboardSummary } from './display.js';
-import { renderWorkoutsView } from './workoutDisplay.js'; // Import the new workout display function
+import { renderWorkoutsView, renderWorkoutPlansView } from './workoutDisplay.js'; // Import new renderWorkoutPlansView
 
 document.addEventListener('DOMContentLoaded', async () => {
     const stepsInput = document.getElementById('stepsInput');
@@ -30,22 +30,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // View Containers
     const dashboardView = document.getElementById('dashboardView');
     const trackingView = document.getElementById('trackingView');
-    const workoutsView = document.getElementById('workoutsView'); // New workouts view container
+    const workoutsView = document.getElementById('workoutsView');
+    const workoutPlansView = document.getElementById('workoutPlansView'); // New workout plans view container
 
     // Navigation Links
     const navDashboard = document.getElementById('navDashboard');
     const navTracking = document.getElementById('navTracking');
     const navWorkouts = document.getElementById('navWorkouts');
+    const navPlans = document.getElementById('navPlans'); // New Plans navigation link
     const navMore = document.getElementById('navMore');
 
     // Set the app version
-    appVersionSpan.textContent = '1.3.0'; // Updated version for new feature
+    appVersionSpan.textContent = '1.4.0'; // Updated version for new feature
 
     // Function to show a specific view and update active nav link
     function showView(viewToShow, activeNavLink) {
         dashboardView.classList.add('hidden');
         trackingView.classList.add('hidden');
-        workoutsView.classList.add('hidden'); // Hide workouts view
+        workoutsView.classList.add('hidden');
+        workoutPlansView.classList.add('hidden'); // Hide workout plans view
         // Add more views here as you add them
 
         viewToShow.classList.remove('hidden');
@@ -96,6 +99,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         showView(workoutsView, navWorkouts);
         // Render the workouts view content
         await renderWorkoutsView(workoutsView);
+    });
+
+    navPlans.addEventListener('click', async (e) => { // New event listener for Plans tab
+        e.preventDefault();
+        showView(workoutPlansView, navPlans);
+        await renderWorkoutPlansView(workoutPlansView);
     });
 
     // Event listener for the save button
