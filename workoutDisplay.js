@@ -976,11 +976,9 @@ export async function displayNextScheduledWorkout() {
         today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
 
         const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const currentDayName = daysOfWeek[today.getDay()];
 
         let nextWorkout = null;
         let nextWorkoutDay = null; // Stores the actual date of the next workout
-        let minDaysUntilNextWorkout = Infinity;
 
         plans.forEach(plan => {
             const planStartDate = new Date(plan.startDate);
@@ -989,48 +987,44 @@ export async function displayNextScheduledWorkout() {
             planEndDate.setDate(planStartDate.getDate() + (plan.durationWeeks * 7));
             planEndDate.setHours(0, 0, 0, 0);
 
-            // Check if the plan is currently active or starts in the future
-            if (today <= planEndDate) {
-                plan.scheduledWorkouts.forEach(scheduledWorkout => {
-                    const scheduledDayIndex = daysOfWeek.indexOf(scheduledWorkout.dayOfWeek);
-                    const currentDayIndex = today.getDay();
+            plan.scheduledWorkouts.forEach(scheduledWorkout => {
+                const scheduledDayIndex = daysOfWeek.indexOf(scheduledWorkout.dayOfWeek);
+                let candidateDate = new Date(planStartDate); // Start checking from the plan's start date
 
-                    let daysUntil = scheduledDayIndex - currentDayIndex;
-                    if (daysUntil < 0) {
-                        daysUntil += 7; // Wrap around to next week
+                // Find the first occurrence of the scheduled day of the week on or after the plan's start date
+                // This loop ensures we get the *next* valid day of the week for the plan.
+                while (candidateDate.getDay() !== scheduledDayIndex) {
+                    candidateDate.setDate(candidateDate.getDate() + 1);
+                    candidateDate.setHours(0, 0, 0, 0); // Keep normalized
+                }
+
+                // If this first occurrence is in the past relative to 'today', find the next one (next week)
+                // This handles cases where the plan started in the past, but the current week's scheduled day
+                // has already passed.
+                if (candidateDate < today) {
+                    candidateDate.setDate(candidateDate.getDate() + 7);
+                    candidateDate.setHours(0, 0, 0, 0);
+                }
+
+                // Ensure this candidate date is within the plan's overall duration
+                // and is the earliest found so far.
+                if (candidateDate <= planEndDate) {
+                    if (nextWorkoutDay === null || candidateDate < nextWorkoutDay) {
+                        nextWorkout = scheduledWorkout;
+                        nextWorkoutDay = candidateDate;
                     }
-
-                    // Calculate the exact date for this potential next workout
-                    const potentialWorkoutDate = new Date(today);
-                    potentialWorkoutDate.setDate(today.getDate() + daysUntil);
-                    potentialWorkoutDate.setHours(0, 0, 0, 0);
-
-                    // Ensure the potential workout date is within the plan's active period
-                    if (potentialWorkoutDate >= planStartDate && potentialWorkoutDate <= planEndDate) {
-                        // If it's today's workout, prioritize it
-                        if (daysUntil === 0) {
-                            nextWorkout = scheduledWorkout;
-                            nextWorkoutDay = potentialWorkoutDate;
-                            minDaysUntilNextWorkout = 0;
-                            return; // Found today's workout, no need to check further for this plan
-                        }
-
-                        // If it's an upcoming workout and closer than previous ones
-                        if (daysUntil < minDaysUntilNextWorkout) {
-                            nextWorkout = scheduledWorkout;
-                            nextWorkoutDay = potentialWorkoutDate;
-                            minDaysUntilNextWorkout = daysUntil;
-                        }
-                    }
-                });
-            }
+                }
+            });
         });
 
         if (nextWorkout) {
+            const diffTime = nextWorkoutDay.getTime() - today.getTime(); // Positive difference in milliseconds
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Round to handle potential daylight saving issues or minor time differences
+
             let displayDay = '';
-            if (minDaysUntilNextWorkout === 0) {
+            if (diffDays === 0) {
                 displayDay = 'Today';
-            } else if (minDaysUntilNextWorkout === 1) {
+            } else if (diffDays === 1) {
                 displayDay = 'Tomorrow';
             } else {
                 displayDay = nextWorkout.dayOfWeek;
