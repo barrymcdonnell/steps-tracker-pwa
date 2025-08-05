@@ -1,11 +1,12 @@
 // db.js
 const DB_NAME = 'dailyHabitsDB';
-const DB_VERSION = 4; // Increment version to trigger onupgradeneeded for new stores
+const DB_VERSION = 5; // Increment version for new workoutSessions store
 export const STEPS_STORE_NAME = 'dailySteps';
 export const WATER_STORE_NAME = 'dailyWater';
 export const CALORIES_STORE_NAME = 'dailyCalories';
 export const EXERCISES_STORE_NAME = 'exercises'; // New object store for individual exercises
 export const WORKOUTS_STORE_NAME = 'workouts'; // New object store for workout routines
+export const WORKOUT_SESSIONS_STORE_NAME = 'workoutSessions'; // New object store for completed workout sessions
 
 let db; // Variable to hold the IndexedDB instance
 
@@ -53,6 +54,14 @@ export function openDatabase() {
                 db.createObjectStore(WORKOUTS_STORE_NAME, { keyPath: 'id', autoIncrement: true });
                 console.log('IndexedDB: Workouts object store created.');
             }
+
+            // New: Create workoutSessions object store for completed workouts
+            if (!db.objectStoreNames.contains(WORKOUT_SESSIONS_STORE_NAME)) {
+                // Workout sessions will be stored by a unique ID, with an index on date for retrieval
+                const sessionStore = db.createObjectStore(WORKOUT_SESSIONS_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                sessionStore.createIndex('date', 'date', { unique: false }); // Index to query by date
+                console.log('IndexedDB: Workout Sessions object store created.');
+            }
         };
 
         request.onsuccess = (event) => {
@@ -69,10 +78,9 @@ export function openDatabase() {
 }
 
 /**
- * Saves or updates daily data in IndexedDB for a specific store.
- * This function is now more generic to handle exercises and workouts too.
+ * Saves or updates data in IndexedDB for a specific store.
  * @param {string} storeName - The name of the object store.
- * @param {string | object} data - The data to save. If storeName is dailySteps, dailyWater, or dailyCalories, it's a {date: string, value: number}. For exercises/workouts, it's an object with an 'id' (or will be auto-incremented).
+ * @param {object} data - The data object to save. Must contain the keyPath property (e.g., 'date' for daily, 'id' for others).
  * @returns {Promise<void>} A promise that resolves when the data is saved.
  */
 export function saveDailyData(storeName, data) {
@@ -84,8 +92,6 @@ export function saveDailyData(storeName, data) {
         const transaction = db.transaction([storeName], 'readwrite');
         const store = transaction.objectStore(storeName);
 
-        // For daily tracking, 'data' is already the object { date: date, value: value }
-        // For exercises/workouts, 'data' is the exercise/workout object
         const request = store.put(data);
 
         request.onsuccess = () => {
@@ -117,7 +123,8 @@ export function getAllDailyData(storeName) {
 
         request.onsuccess = () => {
             // Only sort if it's a daily tracking store (assuming 'date' keyPath)
-            if ([STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME].includes(storeName)) {
+            if ([STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME].includes(storeName)) {
+                // For workout sessions, we also want to sort by date (most recent first)
                 const sortedData = request.result.sort((a, b) => new Date(b.date) - new Date(a.date));
                 resolve(sortedData);
             } else {
