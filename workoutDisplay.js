@@ -1,6 +1,7 @@
 // workoutDisplay.js
-import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME } from './db.js';
+import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME } from './db.js';
 import { EXERCISE_TYPES, WORKOUT_CATEGORIES, DEFAULT_EXERCISE_SETTINGS } from './workoutConstants.js';
+import { formatDate } from './utils.js'; // Import formatDate for session date
 
 // DOM elements (will be dynamically assigned within renderWorkoutsView)
 let workoutViewElement; // The main container for the entire workout section
@@ -227,7 +228,7 @@ async function renderAddWorkoutForm() {
             // Uncheck all checkboxes
             exerciseSelectionDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
             // Redirect back to workouts list after successful save
-            await displayWorkouts(); // <--- Added this line
+            await displayWorkouts();
         } catch (error) {
             console.error('Error saving workout:', error);
             workoutFormMessage.textContent = 'Failed to save workout. Please try again.';
@@ -246,10 +247,13 @@ async function displayWorkouts() {
         <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Workouts</h2>
         <ul id="currentWorkoutList" class="space-y-3"></ul>
         <button id="addWorkoutFromListBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-4">Create New Workout</button>
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 mt-8 text-center">Completed Workouts</h3>
+        <ul id="completedWorkoutsList" class="space-y-3"></ul>
     `;
 
     const currentWorkoutList = document.getElementById('currentWorkoutList');
     const addWorkoutFromListBtn = document.getElementById('addWorkoutFromListBtn');
+    const completedWorkoutsList = document.getElementById('completedWorkoutsList');
 
     addWorkoutFromListBtn.addEventListener('click', () => {
         hideAllWorkoutSubSections();
@@ -270,11 +274,20 @@ async function displayWorkouts() {
                         <p class="text-sm text-gray-600">${workout.category} - ${workout.exercises.length} exercises</p>
                     </div>
                     <div class="flex items-center space-x-2">
+                        <button data-id="${workout.id}" class="start-workout-btn bg-green-500 hover:bg-green-600 text-white text-sm py-1 px-3 rounded-md transition duration-200 mr-2">Start</button>
                         <button data-id="${workout.id}" class="view-edit-workout-btn bg-indigo-500 hover:bg-indigo-600 text-white text-sm py-1 px-3 rounded-md transition duration-200">View/Edit</button>
                         <button data-id="${workout.id}" class="delete-workout-btn text-red-500 hover:text-red-700 text-lg"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
                 currentWorkoutList.appendChild(listItem);
+            });
+
+            document.querySelectorAll('.start-workout-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const workoutId = parseInt(e.currentTarget.dataset.id, 10);
+                    hideAllWorkoutSubSections();
+                    await renderStartWorkoutSession(workoutId);
+                });
             });
 
             document.querySelectorAll('.view-edit-workout-btn').forEach(button => {
@@ -299,6 +312,27 @@ async function displayWorkouts() {
     } catch (error) {
         console.error('Error displaying workouts:', error);
         currentWorkoutList.innerHTML = '<li class="text-center text-red-500">Error loading workouts.</li>';
+    }
+
+    // Display Completed Workouts
+    try {
+        const completedSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
+        if (completedSessions.length === 0) {
+            completedWorkoutsList.innerHTML = '<li class="p-3 rounded-lg text-center text-gray-500 bg-gray-50">No workouts completed yet.</li>';
+        } else {
+            completedSessions.forEach(session => {
+                const listItem = document.createElement('li');
+                listItem.className = 'p-3 rounded-lg flex justify-between items-center bg-green-50';
+                listItem.innerHTML = `
+                    <span class="font-medium text-green-800">${session.workoutName}</span>
+                    <span class="text-sm text-green-600">${session.date}</span>
+                `;
+                completedWorkoutsList.appendChild(listItem);
+            });
+        }
+    } catch (error) {
+        console.error('Error displaying completed workouts:', error);
+        completedWorkoutsList.innerHTML = '<li class="text-center text-red-500">Error loading completed workouts.</li>';
     }
 }
 
@@ -412,11 +446,144 @@ async function renderWorkoutDetailsForm(workoutId) {
             editWorkoutFormMessage.textContent = 'Workout updated successfully!';
             editWorkoutFormMessage.className = 'text-center text-green-500 text-sm mt-2';
             // Redirect back to workouts list after successful update
-            await displayWorkouts(); // <--- Added this line
+            await displayWorkouts();
         } catch (error) {
             console.error('Error updating workout:', error);
             editWorkoutFormMessage.textContent = 'Failed to update workout. Please try again.';
             editWorkoutFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+        }
+    });
+}
+
+/**
+ * Renders the interface for starting and tracking a workout session.
+ * @param {number} workoutId - The ID of the workout routine to start.
+ */
+async function renderStartWorkoutSession(workoutId) {
+    if (!workoutSubSectionElement) return;
+
+    const workout = await getItemById(WORKOUTS_STORE_NAME, workoutId);
+    if (!workout) {
+        workoutSubSectionElement.innerHTML = '<p class="text-center text-red-500">Workout not found.</p>';
+        return;
+    }
+
+    workoutSubSectionElement.innerHTML = `
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Start Workout: ${workout.name}</h2>
+        <p class="text-center text-gray-600 mb-6">Track your sets by checking the boxes.</p>
+
+        <div id="workoutSessionExercises" class="space-y-4">
+            <!-- Exercises and sets will be rendered here -->
+            ${workout.exercises.map((exercise, exIndex) => `
+                <div class="bg-gray-100 p-4 rounded-lg shadow-sm">
+                    <h3 class="font-bold text-lg text-indigo-700 mb-2">${exercise.name} <span class="text-sm text-gray-600">(${exercise.type})</span></h3>
+                    <p class="text-sm text-gray-600 mb-2">${exercise.sets} sets of ${exercise.reps} reps</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${Array.from({ length: exercise.sets }).map((_, setIndex) => `
+                            <label class="inline-flex items-center cursor-pointer bg-white px-3 py-1 rounded-full shadow-sm hover:bg-gray-50 transition duration-150">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-green-600 rounded focus:ring-green-500"
+                                       data-exercise-id="${exercise.id}" data-set-index="${setIndex}">
+                                <span class="ml-2 text-gray-700 text-sm">Set ${setIndex + 1}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+
+        <button id="finishWorkoutSessionBtn"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-8">
+            Finish Workout
+        </button>
+        <button id="cancelWorkoutSessionBtn"
+                class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-2">
+            Cancel Workout
+        </button>
+        <p id="workoutSessionMessage" class="text-center text-sm mt-2"></p>
+    `;
+
+    const finishWorkoutSessionBtn = document.getElementById('finishWorkoutSessionBtn');
+    const cancelWorkoutSessionBtn = document.getElementById('cancelWorkoutSessionBtn');
+    const workoutSessionMessage = document.getElementById('workoutSessionMessage');
+    const workoutSessionExercisesContainer = document.getElementById('workoutSessionExercises');
+
+    // Store the workout details in a data attribute or global variable for easy access
+    workoutSessionExercisesContainer.dataset.workoutId = workout.id;
+    workoutSessionExercisesContainer.dataset.workoutName = workout.name;
+
+    // Event listener for the "Finish Workout" button
+    finishWorkoutSessionBtn.addEventListener('click', async () => {
+        const today = formatDate(new Date());
+        const completedExercises = [];
+        let allSetsCompleted = true;
+
+        // Iterate through each exercise container
+        workoutSessionExercisesContainer.querySelectorAll('.bg-gray-100').forEach(exerciseDiv => {
+            const exerciseId = parseInt(exerciseDiv.querySelector('input[type="checkbox"]').dataset.exerciseId, 10);
+            const exerciseName = exerciseDiv.querySelector('h3').textContent.split('(')[0].trim(); // Extract name
+            const completedSets = [];
+            let setsForThisExerciseCompleted = 0;
+
+            // Iterate through checkboxes for each set
+            exerciseDiv.querySelectorAll('input[type="checkbox"]').forEach((checkbox, setIndex) => {
+                if (checkbox.checked) {
+                    completedSets.push(setIndex + 1);
+                    setsForThisExerciseCompleted++;
+                }
+            });
+
+            // Check if all sets for this exercise were completed
+            const totalSets = parseInt(exerciseDiv.querySelector('p').textContent.split(' ')[0], 10); // Extract total sets
+            if (setsForThisExerciseCompleted < totalSets) {
+                allSetsCompleted = false; // Mark if any exercise has incomplete sets
+            }
+
+            completedExercises.push({
+                exerciseId: exerciseId,
+                exerciseName: exerciseName,
+                completedSets: completedSets,
+                totalSets: totalSets // Store total sets for reference
+            });
+        });
+
+        if (!allSetsCompleted) {
+            workoutSessionMessage.textContent = 'Warning: Not all sets were completed. You can still finish the workout, or complete remaining sets.';
+            workoutSessionMessage.className = 'text-center text-orange-500 text-sm mt-2';
+            // You might want to add a confirmation dialog here for incomplete workouts
+        } else {
+            workoutSessionMessage.textContent = ''; // Clear any previous warning
+        }
+
+        try {
+            const sessionData = {
+                date: today,
+                workoutId: workout.id,
+                workoutName: workout.name,
+                exercisesPerformed: completedExercises,
+                completed: allSetsCompleted, // Indicates if all sets across all exercises were completed
+                timestamp: new Date().toISOString() // Useful for sorting/unique identification
+            };
+            await saveDailyData(WORKOUT_SESSIONS_STORE_NAME, sessionData);
+            workoutSessionMessage.textContent = 'Workout session saved successfully!';
+            workoutSessionMessage.className = 'text-center text-green-500 text-sm mt-2';
+
+            // After a short delay, redirect back to the workouts list
+            setTimeout(async () => {
+                hideAllWorkoutSubSections();
+                await displayWorkouts();
+            }, 1500); // Wait 1.5 seconds to show success message
+        } catch (error) {
+            console.error('Error saving workout session:', error);
+            workoutSessionMessage.textContent = 'Failed to save workout session. Please try again.';
+            workoutSessionMessage.className = 'text-center text-red-500 text-sm mt-2';
+        }
+    });
+
+    // Event listener for the "Cancel Workout" button
+    cancelWorkoutSessionBtn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to cancel this workout session? Any progress will be lost.')) {
+            hideAllWorkoutSubSections();
+            await displayWorkouts(); // Go back to workout list without saving
         }
     });
 }
