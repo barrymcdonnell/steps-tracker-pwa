@@ -981,8 +981,11 @@ export async function displayNextScheduledWorkout() {
         let nextWorkoutDate = null; // Stores the actual Date object of the next workout
 
         plans.forEach(plan => {
-            const planStartDate = new Date(plan.startDate);
-            planStartDate.setHours(0, 0, 0, 0);
+            // Parse plan.startDate as a local date to match `today`'s normalization
+            const parts = plan.startDate.split('-');
+            const planStartDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            planStartDate.setHours(0, 0, 0, 0); // Normalize to local midnight
+
             const planEndDate = new Date(planStartDate);
             // Calculate planEndDate to be inclusive of the last day of the last week
             planEndDate.setDate(planStartDate.getDate() + (plan.durationWeeks * 7) - 1);
