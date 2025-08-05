@@ -956,3 +956,92 @@ async function displayWorkoutPlans() {
         currentWorkoutPlansList.innerHTML = '<li class="text-center text-red-500">Error loading workout plans.</li>';
     }
 }
+
+/**
+ * Displays the next scheduled workout on the dashboard.
+ * This function is exported to be called from main.js.
+ */
+export async function displayNextScheduledWorkout() {
+    const nextWorkoutDetailsElement = document.getElementById('nextWorkoutDetails');
+    if (!nextWorkoutDetailsElement) {
+        console.error('Next workout details element not found on dashboard.');
+        return;
+    }
+
+    nextWorkoutDetailsElement.textContent = 'Checking plans...'; // Initial loading state
+
+    try {
+        const plans = await getAllDailyData(WORKOUT_PLANS_STORE_NAME);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const currentDayName = daysOfWeek[today.getDay()];
+
+        let nextWorkout = null;
+        let nextWorkoutDay = null; // Stores the actual date of the next workout
+        let minDaysUntilNextWorkout = Infinity;
+
+        plans.forEach(plan => {
+            const planStartDate = new Date(plan.startDate);
+            planStartDate.setHours(0, 0, 0, 0);
+            const planEndDate = new Date(planStartDate);
+            planEndDate.setDate(planStartDate.getDate() + (plan.durationWeeks * 7));
+            planEndDate.setHours(0, 0, 0, 0);
+
+            // Check if the plan is currently active or starts in the future
+            if (today <= planEndDate) {
+                plan.scheduledWorkouts.forEach(scheduledWorkout => {
+                    const scheduledDayIndex = daysOfWeek.indexOf(scheduledWorkout.dayOfWeek);
+                    const currentDayIndex = today.getDay();
+
+                    let daysUntil = scheduledDayIndex - currentDayIndex;
+                    if (daysUntil < 0) {
+                        daysUntil += 7; // Wrap around to next week
+                    }
+
+                    // Calculate the exact date for this potential next workout
+                    const potentialWorkoutDate = new Date(today);
+                    potentialWorkoutDate.setDate(today.getDate() + daysUntil);
+                    potentialWorkoutDate.setHours(0, 0, 0, 0);
+
+                    // Ensure the potential workout date is within the plan's active period
+                    if (potentialWorkoutDate >= planStartDate && potentialWorkoutDate <= planEndDate) {
+                        // If it's today's workout, prioritize it
+                        if (daysUntil === 0) {
+                            nextWorkout = scheduledWorkout;
+                            nextWorkoutDay = potentialWorkoutDate;
+                            minDaysUntilNextWorkout = 0;
+                            return; // Found today's workout, no need to check further for this plan
+                        }
+
+                        // If it's an upcoming workout and closer than previous ones
+                        if (daysUntil < minDaysUntilNextWorkout) {
+                            nextWorkout = scheduledWorkout;
+                            nextWorkoutDay = potentialWorkoutDate;
+                            minDaysUntilNextWorkout = daysUntil;
+                        }
+                    }
+                });
+            }
+        });
+
+        if (nextWorkout) {
+            let displayDay = '';
+            if (minDaysUntilNextWorkout === 0) {
+                displayDay = 'Today';
+            } else if (minDaysUntilNextWorkout === 1) {
+                displayDay = 'Tomorrow';
+            } else {
+                displayDay = nextWorkout.dayOfWeek;
+            }
+            nextWorkoutDetailsElement.textContent = `${nextWorkout.workoutName} (${displayDay})`;
+        } else {
+            nextWorkoutDetailsElement.textContent = 'No upcoming workouts scheduled.';
+        }
+
+    } catch (error) {
+        console.error('Error displaying next scheduled workout:', error);
+        nextWorkoutDetailsElement.textContent = 'Error loading workout schedule.';
+    }
+}
