@@ -226,8 +226,8 @@ async function renderAddWorkoutForm() {
             workoutNameInput.value = ''; // Clear input
             // Uncheck all checkboxes
             exerciseSelectionDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
-            // Optionally, you could immediately show the list of workouts here
-            // await displayWorkouts();
+            // Redirect back to workouts list after successful save
+            await displayWorkouts(); // <--- Added this line
         } catch (error) {
             console.error('Error saving workout:', error);
             workoutFormMessage.textContent = 'Failed to save workout. Please try again.';
@@ -411,8 +411,8 @@ async function renderWorkoutDetailsForm(workoutId) {
             await saveDailyData(WORKOUTS_STORE_NAME, updatedWorkout); // Use saveDailyData to update by ID
             editWorkoutFormMessage.textContent = 'Workout updated successfully!';
             editWorkoutFormMessage.className = 'text-center text-green-500 text-sm mt-2';
-            // Optionally, navigate back to list or stay on form
-            // await displayWorkouts();
+            // Redirect back to workouts list after successful update
+            await displayWorkouts(); // <--- Added this line
         } catch (error) {
             console.error('Error updating workout:', error);
             editWorkoutFormMessage.textContent = 'Failed to update workout. Please try again.';
