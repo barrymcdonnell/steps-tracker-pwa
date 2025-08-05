@@ -107,8 +107,10 @@ async function displayExercises() {
                 listItem.className = 'p-3 rounded-lg flex justify-between items-center bg-gray-100';
                 listItem.innerHTML = `
                     <span class="font-medium text-gray-800">${exercise.name}</span>
-                    <span class="text-sm text-gray-600">${exercise.type}</span>
-                    <button data-id="${exercise.id}" class="delete-exercise-btn text-red-500 hover:text-red-700 ml-4"><i class="fa-solid fa-trash"></i></button>
+                    <div class="flex items-center ml-auto"> <!-- Added this div for alignment -->
+                        <span class="text-sm text-gray-600 mr-4">${exercise.type}</span> <!-- Added mr-4 for spacing -->
+                        <button data-id="${exercise.id}" class="delete-exercise-btn text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 `;
                 currentExerciseList.appendChild(listItem);
             });
