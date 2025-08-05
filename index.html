@@ -77,7 +77,7 @@
 
             <!-- App Version Text -->
             <div class="mt-8 text-center text-gray-500 text-xs">
-                App Version: <span id="appVersion">1.3.0</span>
+                App Version: <span id="appVersion">1.4.0</span>
             </div>
         </div>
 
@@ -145,6 +145,11 @@
             <!-- Content for workouts will be rendered here by workoutDisplay.js -->
         </div>
 
+        <!-- Workout Plans View (Initially Hidden) -->
+        <div id="workoutPlansView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
+            <!-- Content for workout plans will be rendered here by workoutDisplay.js -->
+        </div>
+
     </div>
 
     <!-- Navigation Bar (Bottom) -->
@@ -160,6 +165,10 @@
         <a href="#workouts" id="navWorkouts" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-dumbbell text-xl sm:text-2xl"></i>
             <span>Workouts</span>
+        </a>
+        <a href="#plans" id="navPlans" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+            <i class="fa-solid fa-calendar-alt text-xl sm:text-2xl"></i>
+            <span>Plans</span>
         </a>
         <a href="#" id="navMore" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-ellipsis text-xl sm:text-2xl"></i>
