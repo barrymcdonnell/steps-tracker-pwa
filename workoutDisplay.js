@@ -1,11 +1,15 @@
 // workoutDisplay.js
-import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME } from './db.js';
+import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME, WORKOUT_PLANS_STORE_NAME } from './db.js';
 import { EXERCISE_TYPES, WORKOUT_CATEGORIES, DEFAULT_EXERCISE_SETTINGS } from './workoutConstants.js';
 import { formatDate } from './utils.js'; // Import formatDate for session date
 
 // DOM elements (will be dynamically assigned within renderWorkoutsView)
 let workoutViewElement; // The main container for the entire workout section
 let workoutSubSectionElement; // A sub-container within workoutViewElement for forms/lists
+
+// DOM element for workout plans view (new)
+let workoutPlansViewElement;
+let workoutPlansSubSectionElement;
 
 /**
  * Hides all sub-sections within the workout view to prepare for rendering a new one.
@@ -16,6 +20,10 @@ function hideAllWorkoutSubSections() {
     // we just need to clear its content when switching.
     if (workoutSubSectionElement) {
         workoutSubSectionElement.innerHTML = '';
+    }
+    // Also clear workout plans sub-section if it exists
+    if (workoutPlansSubSectionElement) {
+        workoutPlansSubSectionElement.innerHTML = '';
     }
 }
 
@@ -301,7 +309,7 @@ async function displayWorkouts() {
             document.querySelectorAll('.delete-workout-btn').forEach(button => {
                 button.addEventListener('click', async (e) => {
                     const workoutId = parseInt(e.currentTarget.dataset.id, 10);
-                    // Using a simple confirm for now, will replace with custom modal later
+                    // Using a simple confirm for now, will will replace with custom modal later
                     if (confirm('Are you sure you want to delete this workout?')) {
                         await deleteItemById(WORKOUTS_STORE_NAME, workoutId);
                         await displayWorkouts(); // Refresh list after deletion
@@ -641,4 +649,217 @@ export async function renderWorkoutsView(viewElement) {
         hideAllWorkoutSubSections();
         await displayWorkouts();
     });
+}
+
+// --- Workout Plans Functions (New) ---
+
+/**
+ * Renders the initial view for Workout Plans.
+ * @param {HTMLElement} viewElement - The main container for the workout plans view from main.js.
+ */
+export async function renderWorkoutPlansView(viewElement) {
+    workoutPlansViewElement = viewElement; // Assign the main workout plans view element
+
+    workoutPlansViewElement.innerHTML = `
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Workout Plans</h1>
+        <div class="space-y-4">
+            <button id="showAddWorkoutPlanFormBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                Create New Plan
+            </button>
+            <button id="showWorkoutPlansListBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                View All Plans
+            </button>
+        </div>
+        <div id="workoutPlansSubSection" class="mt-8">
+            <!-- Sub-sections (add plan form, plan list) will be rendered here -->
+        </div>
+    `;
+
+    // Assign the sub-section container after it's rendered
+    workoutPlansSubSectionElement = workoutPlansViewElement.querySelector('#workoutPlansSubSection');
+
+    // Add event listeners to the workout plan navigation buttons
+    document.getElementById('showAddWorkoutPlanFormBtn').addEventListener('click', () => {
+        hideAllWorkoutSubSections(); // Hide other workout sub-sections
+        renderAddWorkoutPlanForm();
+    });
+
+    document.getElementById('showWorkoutPlansListBtn').addEventListener('click', async () => {
+        hideAllWorkoutSubSections(); // Hide other workout sub-sections
+        await displayWorkoutPlans();
+    });
+}
+
+/**
+ * Renders the form for creating a new workout plan.
+ */
+async function renderAddWorkoutPlanForm() {
+    if (!workoutPlansSubSectionElement) return;
+
+    // Fetch all available workouts to populate the dropdown
+    const workouts = await getAllDailyData(WORKOUTS_STORE_NAME);
+
+    workoutPlansSubSectionElement.innerHTML = `
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Create New Workout Plan</h2>
+        <div class="mb-4">
+            <label for="planNameInput" class="block text-gray-700 text-sm font-semibold mb-2">Plan Name (e.g., Monday Strength):</label>
+            <input type="text" id="planNameInput" placeholder="e.g., Monday Strength"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+        <div class="mb-4">
+            <label for="selectWorkoutForPlan" class="block text-gray-700 text-sm font-semibold mb-2">Select Workout:</label>
+            <select id="selectWorkoutForPlan"
+                    class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+                <option value="">-- Select a Workout --</option>
+                ${workouts.map(workout => `<option value="${workout.id}">${workout.name} (${workout.category})</option>`).join('')}
+            </select>
+            ${workouts.length === 0 ? '<p class="text-xs text-red-500 mt-1">No workouts available. Create some in the "Workouts" tab first.</p>' : ''}
+        </div>
+        <div class="mb-4">
+            <label for="planDayOfWeek" class="block text-gray-700 text-sm font-semibold mb-2">Day of Week:</label>
+            <select id="planDayOfWeek"
+                    class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label for="planStartDate" class="block text-gray-700 text-sm font-semibold mb-2">Start Date:</label>
+            <input type="date" id="planStartDate"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+        <div class="mb-6">
+            <label for="planDurationWeeks" class="block text-gray-700 text-sm font-semibold mb-2">Duration (Weeks):</label>
+            <input type="number" id="planDurationWeeks" value="6" min="1"
+                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 ease-in-out">
+        </div>
+        <button id="saveWorkoutPlanBtn"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+            Save Workout Plan
+        </button>
+        <p id="workoutPlanFormMessage" class="text-center text-sm mt-2"></p>
+    `;
+
+    const planNameInput = document.getElementById('planNameInput');
+    const selectWorkoutForPlan = document.getElementById('selectWorkoutForPlan');
+    const planDayOfWeek = document.getElementById('planDayOfWeek');
+    const planStartDate = document.getElementById('planStartDate');
+    const planDurationWeeks = document.getElementById('planDurationWeeks');
+    const saveWorkoutPlanBtn = document.getElementById('saveWorkoutPlanBtn');
+    const workoutPlanFormMessage = document.getElementById('workoutPlanFormMessage');
+
+    // Set today's date as default for start date
+    planStartDate.value = formatDate(new Date());
+
+    saveWorkoutPlanBtn.addEventListener('click', async () => {
+        const name = planNameInput.value.trim();
+        const workoutId = parseInt(selectWorkoutForPlan.value, 10);
+        const dayOfWeek = planDayOfWeek.value;
+        const startDate = planStartDate.value;
+        const durationWeeks = parseInt(planDurationWeeks.value, 10);
+
+        if (!name || isNaN(workoutId) || !startDate || isNaN(durationWeeks) || durationWeeks <= 0) {
+            workoutPlanFormMessage.textContent = 'Please fill in all plan details correctly.';
+            workoutPlanFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+            return;
+        }
+
+        const selectedWorkout = workouts.find(w => w.id === workoutId);
+        if (!selectedWorkout) {
+            workoutPlanFormMessage.textContent = 'Selected workout not found.';
+            workoutPlanFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+            return;
+        }
+
+        try {
+            const newPlan = {
+                name: name,
+                workoutId: workoutId,
+                workoutName: selectedWorkout.name, // Store name for easier display
+                dayOfWeek: dayOfWeek,
+                startDate: startDate,
+                durationWeeks: durationWeeks
+            };
+            await saveDailyData(WORKOUT_PLANS_STORE_NAME, newPlan);
+            workoutPlanFormMessage.textContent = 'Workout plan saved successfully!';
+            workoutPlanFormMessage.className = 'text-center text-green-500 text-sm mt-2';
+
+            // Clear form
+            planNameInput.value = '';
+            selectWorkoutForPlan.value = '';
+            planDayOfWeek.value = 'Monday';
+            planStartDate.value = formatDate(new Date());
+            planDurationWeeks.value = '6';
+
+            // Redirect back to workout plans list after successful save
+            setTimeout(async () => {
+                await displayWorkoutPlans();
+            }, 1500);
+        } catch (error) {
+            console.error('Error saving workout plan:', error);
+            workoutPlanFormMessage.textContent = 'Failed to save workout plan. Please try again.';
+            workoutPlanFormMessage.className = 'text-center text-red-500 text-sm mt-2';
+        }
+    });
+}
+
+/**
+ * Displays the list of workout plans.
+ */
+async function displayWorkoutPlans() {
+    if (!workoutPlansSubSectionElement) return;
+
+    workoutPlansSubSectionElement.innerHTML = `
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Workout Plans</h2>
+        <ul id="currentWorkoutPlansList" class="space-y-3"></ul>
+        <button id="addWorkoutPlanFromListBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-4">Create New Plan</button>
+    `;
+
+    const currentWorkoutPlansList = document.getElementById('currentWorkoutPlansList');
+    const addWorkoutPlanFromListBtn = document.getElementById('addWorkoutPlanFromListBtn');
+
+    addWorkoutPlanFromListBtn.addEventListener('click', () => {
+        hideAllWorkoutSubSections();
+        renderAddWorkoutPlanForm();
+    });
+
+    try {
+        const plans = await getAllDailyData(WORKOUT_PLANS_STORE_NAME);
+        if (plans.length === 0) {
+            currentWorkoutPlansList.innerHTML = '<li class="p-3 rounded-lg text-center text-gray-500 bg-gray-50">No workout plans created yet. Click "Create New Plan" above.</li>';
+        } else {
+            plans.forEach(plan => {
+                const listItem = document.createElement('li');
+                listItem.className = 'p-3 rounded-lg flex justify-between items-center bg-gray-100';
+                listItem.innerHTML = `
+                    <div>
+                        <span class="font-medium text-gray-800">${plan.name}</span>
+                        <p class="text-sm text-gray-600">${plan.workoutName} on ${plan.dayOfWeek}s for ${plan.durationWeeks} weeks (Starts: ${plan.startDate})</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button data-id="${plan.id}" class="delete-plan-btn text-red-500 hover:text-red-700 text-lg"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                currentWorkoutPlansList.appendChild(listItem);
+            });
+
+            document.querySelectorAll('.delete-plan-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const planId = parseInt(e.currentTarget.dataset.id, 10);
+                    if (confirm('Are you sure you want to delete this workout plan?')) {
+                        await deleteItemById(WORKOUT_PLANS_STORE_NAME, planId);
+                        await displayWorkoutPlans(); // Refresh list after deletion
+                    }
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error displaying workout plans:', error);
+        currentWorkoutPlansList.innerHTML = '<li class="text-center text-red-500">Error loading workout plans.</li>';
+    }
 }
