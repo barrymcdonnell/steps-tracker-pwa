@@ -63,12 +63,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Remove active class from all nav links
         document.querySelectorAll('.active-nav-link').forEach(link => {
             link.classList.remove('active-nav-link');
-            link.classList.remove('bg-indigo-600');
+            // Removed: link.classList.remove('bg-indigo-600'); // This is now handled by CSS
         });
         // Add active class to the clicked nav link
         if (activeNavLink) {
             activeNavLink.classList.add('active-nav-link');
-            activeNavLink.classList.add('bg-indigo-600');
+            // Removed: activeNavLink.classList.add('bg-indigo-600'); // This is now handled by CSS
         }
     }
 
