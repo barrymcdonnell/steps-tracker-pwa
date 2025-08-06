@@ -20,8 +20,14 @@
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen font-sans">
 
+    <!-- Fixed Header (New) -->
+    <header class="w-full bg-indigo-800 text-white p-4 text-center text-2xl font-bold fixed top-0 left-0 z-20 shadow-lg rounded-b-lg">
+        FitTrackr
+    </header>
+
     <!-- Main Content Wrapper -->
-    <div id="mainContentWrapper" class="w-full max-w-md mx-4 mt-8 pb-20">
+    <!-- Added pt-16 to account for the fixed header height -->
+    <div id="mainContentWrapper" class="w-full max-w-md mx-4 mt-8 pb-20 pt-16">
 
         <!-- Dashboard View -->
         <div id="dashboardView" class="container bg-white p-8 rounded-xl shadow-lg mb-8">
@@ -83,7 +89,7 @@
 
             <!-- App Version Text -->
             <div class="mt-8 text-center text-gray-500 text-xs">
-                App Version: <span id="appVersion">1.5.0</span>
+                App Version: <span id="appVersion">1.6.0</span>
             </div>
         </div>
 
