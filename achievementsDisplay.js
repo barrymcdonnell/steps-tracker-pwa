@@ -56,7 +56,51 @@ const ACHIEVEMENTS = [
         icon: '💪',
         check: async () => {
             const workoutSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
-            return workoutSessions.length > 0;
+            return workoutSessions.length >= 1;
+        }
+    },
+    {
+        id: 'five-workouts',
+        name: 'Workout Enthusiast',
+        description: 'Complete 5 workout sessions!',
+        criteria: { type: 'workout_session', value: 5 },
+        icon: '🏋️',
+        check: async () => {
+            const workoutSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
+            return workoutSessions.length >= 5;
+        }
+    },
+    {
+        id: 'ten-workouts',
+        name: 'Workout Master',
+        description: 'Complete 10 workout sessions!',
+        criteria: { type: 'workout_session', value: 10 },
+        icon: '🏅',
+        check: async () => {
+            const workoutSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
+            return workoutSessions.length >= 10;
+        }
+    },
+    {
+        id: 'twenty-five-workouts',
+        name: 'Fitness Champion',
+        description: 'Complete 25 workout sessions!',
+        criteria: { type: 'workout_session', value: 25 },
+        icon: '�',
+        check: async () => {
+            const workoutSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
+            return workoutSessions.length >= 25;
+        }
+    },
+    {
+        id: 'fifty-workouts',
+        name: 'Legendary Lifter',
+        description: 'Complete 50 workout sessions!',
+        criteria: { type: 'workout_session', value: 50 },
+        icon: '🌟',
+        check: async () => {
+            const workoutSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
+            return workoutSessions.length >= 50;
         }
     },
     {
@@ -85,20 +129,22 @@ const ACHIEVEMENTS = [
                 const formattedCheckDate = formatDate(checkDate);
 
                 if (stepsByDate[formattedCheckDate] && stepsByDate[formattedCheckDate] >= STEP_GOAL) {
-                    if (lastDate === null || (new Date(lastDate).getDate() - new Date(formattedCheckDate).getDate()) === 1) {
+                    // Check if the current day is exactly one day before the last checked day (consecutive)
+                    if (lastDate === null || (new Date(lastDate).getTime() - new Date(formattedCheckDate).getTime()) === (1000 * 60 * 60 * 24)) {
                         streak++;
                         lastDate = formattedCheckDate;
                     } else {
-                        // Gap in streak
-                        streak = 1; // Reset streak if there's a gap
-                        lastDate = formattedCheckDate;
+                        // If there's a gap, reset the streak.
+                        // This handles cases where data might be missing for an intermediate day, breaking the true "consecutive" streak.
+                        streak = 0; // Reset streak if not consecutive
+                        return false; // No 7-day streak if a gap is found
                     }
                 } else {
-                    // If today or any of the last 6 days don't meet the goal, no streak
+                    // If any of the last 7 days don't meet the goal, the streak is broken
                     return false;
                 }
             }
-            return streak >= 7;
+            return streak >= 7; // Only true if all 7 days met the goal consecutively
         }
     }
 ];
@@ -191,3 +237,4 @@ export async function checkAndAwardAchievements() {
         await displayAchievements();
     }
 }
+�
