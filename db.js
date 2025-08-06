@@ -7,7 +7,7 @@ export const STEPS_STORE_NAME = 'steps';
 export const WATER_STORE_NAME = 'water';
 export const CALORIES_STORE_NAME = 'calories';
 export const EXERCISES_STORE_NAME = 'exercises'; // For individual exercises
-export const WORKOUTS_STORE_NAME = 'workouts';   // For workout routines (collections of exercises)
+export const WORKOUTS_STORE_NAME = 'workouts'; // For workout routines (collections of exercises)
 export const WORKOUT_SESSIONS_STORE_NAME = 'workout_sessions'; // For completed workout instances
 export const WORKOUT_PLANS_STORE_NAME = 'workout_plans'; // For scheduled workout plans
 export const ACHIEVEMENTS_STORE_NAME = 'achievements'; // New store for achievements
@@ -16,6 +16,7 @@ let db;
 
 /**
  * Opens the IndexedDB database and creates/upgrades object stores.
+ * This must be called and awaited before any other database operations.
  * @returns {Promise<IDBDatabase>} A promise that resolves with the database instance.
  */
 export function openDatabase() {
@@ -53,7 +54,6 @@ export function openDatabase() {
                     if (store.name === WORKOUT_PLANS_STORE_NAME) {
                         objectStore.createIndex('startDate', 'startDate', { unique: false });
                     }
-                    // For achievements, 'id' is already unique keyPath, no extra index needed for now
                 }
             });
         };
@@ -72,11 +72,12 @@ export function openDatabase() {
 }
 
 /**
- * Saves data to a specified object store. If the data has an 'id', it updates the existing record.
- * Otherwise, it adds a new record.
- * @param {string} storeName - The name of the object store.
- * @param {object} data - The data object to save.
- * @returns {Promise<number>} A promise that resolves with the ID of the saved item.
+ * Saves a daily data entry to the specified object store.
+ * If an entry for the date already exists, it updates the value by adding to it.
+ * Otherwise, it adds a new record. This is specific to tracking daily habits.
+ * @param {string} storeName - The name of the object store (e.g., STEPS_STORE_NAME).
+ * @param {object} data - The data object to save, must have a 'date' and 'value' property.
+ * @returns {Promise<void>} A promise that resolves when the save is complete.
  */
 export function saveDailyData(storeName, data) {
     return new Promise((resolve, reject) => {
@@ -87,29 +88,36 @@ export function saveDailyData(storeName, data) {
 
         const transaction = db.transaction([storeName], 'readwrite');
         const store = transaction.objectStore(storeName);
+        const index = store.index('date');
+        const getRequest = index.get(data.date);
 
-        let request;
-        if (data.id) {
-            // Update existing item
-            request = store.put(data);
-        } else {
-            // Add new item
-            request = store.add(data);
-        }
-
-        request.onsuccess = (event) => {
-            resolve(event.target.result); // Returns the ID of the new/updated item
+        getRequest.onerror = (event) => {
+            console.error(`Error getting data for date ${data.date}:`, event.target.error);
+            reject(event.target.error);
         };
 
-        request.onerror = (event) => {
-            console.error(`Error saving data to ${storeName}:`, event.target.error);
-            reject(event.target.error);
+        getRequest.onsuccess = () => {
+            const existingData = getRequest.result;
+            let finalData;
+
+            if (existingData) {
+                // Update existing record by adding the new value
+                finalData = { ...existingData, value: existingData.value + data.value };
+                const putRequest = store.put(finalData);
+                putRequest.onsuccess = () => resolve();
+                putRequest.onerror = (event) => reject(event.target.error);
+            } else {
+                // Add new record
+                const addRequest = store.add(data);
+                addRequest.onsuccess = () => resolve();
+                addRequest.onerror = (event) => reject(event.target.error);
+            }
         };
     });
 }
 
 /**
- * Retrieves all data from a specified object store.
+ * Retrieves all data from a specified object store, sorted by date in descending order.
  * @param {string} storeName - The name of the object store.
  * @returns {Promise<Array<object>>} A promise that resolves with an array of all items.
  */
@@ -125,7 +133,10 @@ export function getAllDailyData(storeName) {
         const request = store.getAll();
 
         request.onsuccess = (event) => {
-            resolve(event.target.result);
+            const data = event.target.result;
+            // Sort by date in descending order
+            data.sort((a, b) => new Date(b.date) - new Date(a.date));
+            resolve(data);
         };
 
         request.onerror = (event) => {
