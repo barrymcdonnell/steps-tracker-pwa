@@ -1,195 +1,148 @@
 // display.js
-import { getAllDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
-import { renderStepsChart, renderWaterChart, renderCaloriesChart } from './charts.js';
+import { getDailyData, getStoreData, WORKOUTS_STORE_NAME, PLANS_STORE_NAME } from './db.js';
 import { STEP_GOAL, WATER_GOAL, CALORIE_GOAL } from './constants.js';
-import { formatDate } from './utils.js'; // Import formatDate
+import { renderStepsChart, renderWaterChart, renderCaloriesChart } from './charts.js';
+import { EXERCISE_TYPES, WORKOUT_CATEGORIES } from './workoutConstants.js';
 
 /**
- * Displays the progress data in the UI lists and updates the charts for the Tracking View.
- * @param {HTMLElement} stepsListElement - The ul element for steps.
- * @param {HTMLElement} waterListElement - The ul element for water.
- * @param {HTMLCanvasElement} stepsChartCanvasElement - The canvas element for steps chart.
- * @param {HTMLCanvasElement} waterChartCanvasElement - The canvas element for water chart.
- * @param {HTMLElement} caloriesListElement - The ul element for calories.
- * @param {HTMLCanvasElement} caloriesChartCanvasElement - The canvas element for calories chart.
+ * Updates the summary card on the dashboard with today's data and goals.
+ * @param {HTMLElement} stepsElement - The DOM element for today's steps.
+ * @param {HTMLElement} waterElement - The DOM element for today's water.
+ * @param {HTMLElement} caloriesElement - The DOM element for today's calories.
+ * @param {HTMLElement} stepsGoalElement - The DOM element for the steps goal.
+ * @param {HTMLElement} waterGoalElement - The DOM element for the water goal.
+ * @param {HTMLElement} caloriesGoalElement - The DOM element for the calories goal.
  */
-export async function displayProgress(stepsListElement, waterListElement, stepsChartCanvasElement, waterChartCanvasElement, caloriesListElement, caloriesChartCanvasElement) {
-    try {
-        const stepsData = await getAllDailyData(STEPS_STORE_NAME);
-        const waterData = await getAllDailyData(WATER_STORE_NAME);
-        const caloriesData = await getAllDailyData(CALORIES_STORE_NAME);
+export async function displayDashboardSummary(stepsElement, waterElement, caloriesElement, stepsGoalElement, waterGoalElement, caloriesGoalElement) {
+    const todaySteps = await getDailyData('steps');
+    const todayWater = await getDailyData('water');
+    const todayCalories = await getDailyData('calories');
 
-        // Display Steps List
-        stepsListElement.innerHTML = '';
-        if (stepsData.length === 0) {
-            stepsListElement.innerHTML = '<li class="text-center text-gray-500">No steps recorded yet.</li>';
-        } else {
-            const displayCount = Math.min(stepsData.length, 7);
-            for (let i = 0; i < displayCount; i++) {
-                const entry = stepsData[i];
-                const listItem = document.createElement('li');
-                let goalStatusClass = '';
-                let goalStatusText = '';
+    stepsElement.textContent = todaySteps.value !== undefined ? todaySteps.value : '0';
+    waterElement.textContent = todayWater.value !== undefined ? todayWater.value / 1000 : '0';
+    caloriesElement.textContent = todayCalories.value !== undefined ? todayCalories.value : '0';
 
-                if (entry.value >= STEP_GOAL) {
-                    goalStatusClass = 'bg-green-100 text-green-800';
-                    goalStatusText = '✅ Goal Met!';
-                } else {
-                    goalStatusClass = 'bg-red-100 text-red-800';
-                    goalStatusText = '❌ Goal Not Met';
-                }
+    stepsGoalElement.textContent = STEP_GOAL;
+    waterGoalElement.textContent = WATER_GOAL / 1000;
+    caloriesGoalElement.textContent = CALORIE_GOAL;
+}
 
-                listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
-                listItem.innerHTML = `
-                    <span class="font-medium">${entry.date}</span>
-                    <span class="text-sm">${entry.value} steps (${goalStatusText})</span>
-                `;
-                stepsListElement.appendChild(listItem);
-            }
+/**
+ * Fetches and displays progress data for a given store, including a chart and a list.
+ * @param {HTMLElement} listElement - The list DOM element to populate.
+ * @param {HTMLCanvasElement} chartCanvas - The chart canvas DOM element.
+ * @param {string} storeName - The name of the IndexedDB object store (e.g., 'steps').
+ * @param {Function} renderChartFn - The chart rendering function (e.g., renderStepsChart).
+ */
+async function displayDataForStore(listElement, chartCanvas, storeName, renderChartFn) {
+    const data = await getStoreData(storeName);
+
+    // Clear existing content
+    listElement.innerHTML = '';
+    
+    if (data.length === 0) {
+        listElement.innerHTML = '<li class="p-4 text-center text-gray-500">No data logged yet.</li>';
+        // Destroy the old chart instance if it exists to avoid rendering issues
+        if (chartCanvas && chartCanvas.chart) {
+            chartCanvas.chart.destroy();
         }
+        return;
+    }
 
-        // Display Water List
-        waterListElement.innerHTML = '';
-        if (waterData.length === 0) {
-            waterListElement.innerHTML = '<li class="text-center text-gray-500">No water recorded yet.</li>';
-        } else {
-            const displayCount = Math.min(waterData.length, 7);
-            for (let i = 0; i < displayCount; i++) {
-                const entry = waterData[i];
-                const listItem = document.createElement('li');
-                let goalStatusClass = '';
-                let goalStatusText = '';
+    // Populate the list
+    data.forEach(entry => {
+        const listItem = document.createElement('li');
+        listItem.className = 'p-4 border-b border-gray-200 last:border-b-0 flex justify-between items-center';
+        listItem.innerHTML = `
+            <div class="font-medium text-gray-800">${entry.date}</div>
+            <div class="text-indigo-600 font-semibold">${entry.value}</div>
+        `;
+        listElement.appendChild(listItem);
+    });
 
-                if (entry.value >= WATER_GOAL) {
-                    goalStatusClass = 'bg-green-100 text-green-800';
-                    goalStatusText = '✅ Goal Met!';
-                } else {
-                    goalStatusClass = 'bg-red-100 text-red-800';
-                    goalStatusText = '❌ Goal Not Met';
-                }
-
-                listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
-                listItem.innerHTML = `
-                    <span class="font-medium">${entry.date}</span>
-                    <span class="text-sm">${entry.value} ml (${goalStatusText})</span>
-                `;
-                waterListElement.appendChild(listItem);
-            }
-        }
-
-        // Display Calories List
-        caloriesListElement.innerHTML = '';
-        if (caloriesData.length === 0) {
-            caloriesListElement.innerHTML = '<li class="text-center text-gray-500">No calories recorded yet.</li>';
-        } else {
-            const displayCount = Math.min(caloriesData.length, 7);
-            for (let i = 0; i < displayCount; i++) {
-                const entry = caloriesData[i];
-                const listItem = document.createElement('li');
-                let goalStatusClass = '';
-                let goalStatusText = '';
-                const caloriesDifference = CALORIE_GOAL - entry.value;
-
-                if (caloriesDifference >= 0) {
-                    goalStatusClass = 'bg-green-100 text-green-800';
-                    goalStatusText = `✅ ${caloriesDifference} kcal left`;
-                } else {
-                    goalStatusClass = 'bg-red-100 text-red-800';
-                    goalStatusText = `❌ ${Math.abs(caloriesDifference)} kcal over`;
-                }
-
-                listItem.className = `p-3 rounded-lg flex justify-between items-center ${goalStatusClass}`;
-                listItem.innerHTML = `
-                    <span class="font-medium">${entry.date}</span>
-                    <span class="text-sm">${entry.value} kcal (${goalStatusText})</span>
-                `;
-                caloriesListElement.appendChild(listItem);
-            }
-        }
-
-        // Render Charts
-        renderStepsChart(stepsChartCanvasElement, stepsData.slice(0, Math.min(stepsData.length, 7)).reverse());
-        renderWaterChart(waterChartCanvasElement, waterData.slice(0, Math.min(waterData.length, 7)).reverse());
-        renderCaloriesChart(caloriesChartCanvasElement, caloriesData.slice(0, Math.min(caloriesData.length, 7)).reverse());
-
-    } catch (error) {
-        console.error('Failed to display progress:', error);
-        stepsListElement.innerHTML = '<li class="text-center text-red-500">Error loading steps data.</li>';
-        waterListElement.innerHTML = '<li class="text-center text-red-500">Error loading water data.</li>';
-        caloriesListElement.innerHTML = '<li class="text-center text-red-500">Error loading calories data.</li>';
-        stepsChartCanvasElement.style.display = 'none';
-        waterChartCanvasElement.style.display = 'none';
-        caloriesChartCanvasElement.style.display = 'none';
+    // Render the chart
+    if (chartCanvas) {
+        renderChartFn(chartCanvas, data);
     }
 }
 
 /**
- * Displays today's summary data on the Dashboard View.
- * @param {HTMLElement} todayStepsElement - Element to display today's steps.
- * @param {HTMLElement} todayWaterElement - Element to display today's water.
- * @param {HTMLElement} todayCaloriesElement - Element to display today's calories.
- * @param {HTMLElement} todayStepsGoalElement - Element to display steps goal status.
- * @param {HTMLElement} todayWaterGoalElement - Element to display water goal status.
- * @param {HTMLElement} todayCaloriesGoalElement - Element to display calories goal status.
+ * Displays the progress view with charts and lists for steps, water, and calories.
+ * @param {HTMLElement} stepsListElement - The DOM element for the steps list.
+ * @param {HTMLElement} waterListElement - The DOM element for the water list.
+ * @param {HTMLCanvasElement} stepsChartCanvasElement - The DOM element for the steps chart.
+ * @param {HTMLCanvasElement} waterChartCanvasElement - The DOM element for the water chart.
+ * @param {HTMLElement} caloriesListElement - The DOM element for the calories list.
+ * @param {HTMLCanvasElement} caloriesChartCanvasElement - The DOM element for the calories chart.
  */
-export async function displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement) {
-    const today = formatDate(new Date());
+export async function displayProgress(stepsListElement, waterListElement, stepsChartCanvasElement, waterChartCanvasElement, caloriesListElement, caloriesChartCanvasElement) {
+    await displayDataForStore(stepsListElement, stepsChartCanvasElement, 'steps', renderStepsChart);
+    await displayDataForStore(waterListElement, waterChartCanvasElement, 'water', renderWaterChart);
+    await displayDataForStore(caloriesListElement, caloriesChartCanvasElement, 'calories', renderCaloriesChart);
+}
 
-    try {
-        const stepsData = await getAllDailyData(STEPS_STORE_NAME);
-        const waterData = await getAllDailyData(WATER_STORE_NAME);
-        const caloriesData = await getAllDailyData(CALORIES_STORE_NAME);
+/**
+ * Displays the list of saved workouts.
+ * @param {HTMLElement} workoutsListElement - The DOM element for the workouts list.
+ */
+export async function displayWorkouts() {
+    const workoutsListElement = document.getElementById('workoutsList');
+    workoutsListElement.innerHTML = '';
+    
+    const workouts = await getStoreData(WORKOUTS_STORE_NAME);
 
-        // Get today's steps
-        const todayStepsEntry = stepsData.find(entry => entry.date === today);
-        const currentSteps = todayStepsEntry ? todayStepsEntry.value : 0;
-        todayStepsElement.textContent = currentSteps;
-        if (currentSteps >= STEP_GOAL) {
-            todayStepsGoalElement.textContent = `Goal Met (${STEP_GOAL})`;
-            todayStepsGoalElement.classList.remove('text-red-600');
-            todayStepsGoalElement.classList.add('text-green-600');
-        } else {
-            todayStepsGoalElement.textContent = `${STEP_GOAL - currentSteps} left`;
-            todayStepsGoalElement.classList.remove('text-green-600');
-            todayStepsGoalElement.classList.add('text-red-600');
-        }
-
-        // Get today's water
-        const todayWaterEntry = waterData.find(entry => entry.date === today);
-        const currentWater = todayWaterEntry ? todayWaterEntry.value : 0;
-        todayWaterElement.textContent = currentWater;
-        if (currentWater >= WATER_GOAL) {
-            todayWaterGoalElement.textContent = `Goal Met (${WATER_GOAL}ml)`;
-            todayWaterGoalElement.classList.remove('text-red-600');
-            todayWaterGoalElement.classList.add('text-green-600');
-        } else {
-            todayWaterGoalElement.textContent = `${WATER_GOAL - currentWater}ml left`;
-            todayWaterGoalElement.classList.remove('text-green-600');
-            todayWaterGoalElement.classList.add('text-red-600');
-        }
-
-        // Get today's calories
-        const todayCaloriesEntry = caloriesData.find(entry => entry.date === today);
-        const currentCalories = todayCaloriesEntry ? todayCaloriesEntry.value : 0;
-        todayCaloriesElement.textContent = currentCalories;
-        const caloriesDifference = CALORIE_GOAL - currentCalories;
-        if (caloriesDifference >= 0) {
-            todayCaloriesGoalElement.textContent = `${caloriesDifference} kcal left`;
-            todayCaloriesGoalElement.classList.remove('text-red-600');
-            todayCaloriesGoalElement.classList.add('text-green-600');
-        } else {
-            todayCaloriesGoalElement.textContent = `${Math.abs(caloriesDifference)} kcal over`;
-            todayCaloriesGoalElement.classList.remove('text-green-600');
-            todayCaloriesGoalElement.classList.add('text-red-600');
-        }
-
-    } catch (error) {
-        console.error('Failed to display dashboard summary:', error);
-        todayStepsElement.textContent = 'Error';
-        todayWaterElement.textContent = 'Error';
-        todayCaloriesElement.textContent = 'Error';
-        todayStepsGoalElement.textContent = '';
-        todayWaterGoalElement.textContent = '';
-        todayCaloriesGoalElement.textContent = '';
+    if (workouts.length === 0) {
+        workoutsListElement.innerHTML = '<p class="text-center text-gray-500 mt-4">No workouts saved yet. Time to get moving!</p>';
+        return;
     }
+
+    workouts.forEach(workout => {
+        const li = document.createElement('li');
+        li.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-2';
+        li.innerHTML = `
+            <h3 class="text-lg font-semibold text-gray-900">${workout.name}</h3>
+            <p class="text-sm text-gray-500">Category: ${workout.category}</p>
+            <ul class="mt-2 text-sm text-gray-700">
+                ${workout.exercises.map(ex => `
+                    <li class="pl-2 border-l-2 border-indigo-500 my-1">
+                        <strong>${ex.name}:</strong> ${ex.sets} sets of ${ex.reps} reps
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+        workoutsListElement.appendChild(li);
+    });
+}
+
+/**
+ * Displays the list of saved workout plans.
+ * @param {HTMLElement} workoutPlansListElement - The DOM element for the workout plans list.
+ */
+export async function displayPlans() {
+    const workoutPlansListElement = document.getElementById('workoutPlansList');
+    workoutPlansListElement.innerHTML = '';
+    
+    const plans = await getStoreData(PLANS_STORE_NAME);
+
+    if (plans.length === 0) {
+        workoutPlansListElement.innerHTML = '<p class="text-center text-gray-500 mt-4">No workout plans created yet. Let\'s build one!</p>';
+        return;
+    }
+
+    plans.forEach(plan => {
+        const li = document.createElement('li');
+        li.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-2';
+        li.innerHTML = `
+            <h3 class="text-lg font-semibold text-gray-900">${plan.name}</h3>
+            <p class="text-sm text-gray-500">Duration: ${plan.durationDays} days</p>
+            <ul class="mt-2 text-sm text-gray-700">
+                ${plan.workoutIds.map(workoutId => `
+                    <li class="pl-2 border-l-2 border-green-500 my-1">
+                        Workout ID: ${workoutId}
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+        workoutPlansListElement.appendChild(li);
+    });
 }
