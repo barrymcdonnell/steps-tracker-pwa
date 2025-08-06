@@ -7,6 +7,27 @@ import { formatDate } from './utils.js';
 let achievementsViewElement;
 let achievementsSubSectionElement;
 
+/**
+ * Displays a toast notification with a given message.
+ * @param {string} message - The message to display in the toast.
+ */
+function showToastNotification(message) {
+    const toast = document.getElementById('toastNotification');
+    if (toast) {
+        toast.textContent = message;
+        toast.classList.add('show');
+
+        // Hide the toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            // Optionally, remove the text after it's hidden to clear it
+            setTimeout(() => {
+                toast.textContent = '';
+            }, 500); // Wait for transition to finish
+        }, 3000);
+    }
+}
+
 // Define your achievement badges and their criteria
 const ACHIEVEMENTS = [
     {
@@ -225,6 +246,7 @@ export async function checkAndAwardAchievements() {
                         timestamp: new Date().toISOString()
                     });
                     console.log(`Achievement Awarded: ${achievementDef.name}`);
+                    showToastNotification(`Achievement Unlocked: ${achievementDef.name}!`); // Show toast notification
                     newAchievementAwarded = true;
                 }
             } catch (error) {
