@@ -41,11 +41,12 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="date"]:focus, 
 }
 
 /* Custom Gradient Classes */
-/* Primary button style */
+/* Primary button style (for general actions like View Achievements/Exercises) */
 .btn-primary {
     @apply w-full text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105;
     background: linear-gradient(to right, #191970, #2a2a8a); /* Primary color gradient */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: block; /* Explicitly make it a block element to ensure stacking */
 }
 .btn-primary:hover {
     background: linear-gradient(to right, #2a2a8a, #191970); /* Reverse gradient on hover */
@@ -89,6 +90,20 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="date"]:focus, 
     background-color: #16a34a; /* Tailwind green-600 */
 }
 .btn-green:focus {
+    box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+/* New: Style for the 'Save Daily Data' button on the dashboard */
+.btn-save-daily {
+    @apply w-full text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105;
+    background: linear-gradient(to right, #22c55e, #16a34a); /* Green gradient */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: block; /* Ensure it's a block element */
+}
+.btn-save-daily:hover {
+    background: linear-gradient(to right, #16a34a, #22c55e); /* Reverse green gradient on hover */
+}
+.btn-save-daily:focus {
     box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, 0.5);
 }
 
