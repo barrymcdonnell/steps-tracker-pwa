@@ -27,7 +27,7 @@ const ACHIEVEMENTS = [
         name: 'Hydration Hero',
         description: `Drink ${WATER_GOAL}ml of water in a day!`,
         criteria: { type: 'water', value: WATER_GOAL },
-        icon: '💧',
+        icon: '�',
         check: async () => {
             const today = formatDate(new Date());
             const dailyWater = await getAllDailyData(WATER_STORE_NAME);
@@ -86,7 +86,7 @@ const ACHIEVEMENTS = [
         name: 'Fitness Champion',
         description: 'Complete 25 workout sessions!',
         criteria: { type: 'workout_session', value: 25 },
-        icon: '�',
+        icon: '🏆',
         check: async () => {
             const workoutSessions = await getAllDailyData(WORKOUT_SESSIONS_STORE_NAME);
             return workoutSessions.length >= 25;
@@ -169,7 +169,7 @@ export async function renderAchievementsView(viewElement) {
 }
 
 /**
- * Displays the list of awarded achievements.
+ * Displays the list of all achievements, highlighting awarded ones.
  */
 async function displayAchievements() {
     if (!achievementsSubSectionElement) return;
@@ -178,23 +178,25 @@ async function displayAchievements() {
         const awardedAchievements = await getAllDailyData(ACHIEVEMENTS_STORE_NAME);
         achievementsSubSectionElement.innerHTML = ''; // Clear loading message
 
-        if (awardedAchievements.length === 0) {
-            achievementsSubSectionElement.innerHTML = '<p class="text-center text-gray-500 col-span-full">No achievements earned yet. Keep tracking!</p>';
-        } else {
-            ACHIEVEMENTS.forEach(achievementDef => {
-                const isAwarded = awardedAchievements.some(a => a.id === achievementDef.id);
-                const badgeElement = document.createElement('div');
-                badgeElement.className = `p-4 rounded-lg shadow-md flex flex-col items-center text-center transition-all duration-300 ${isAwarded ? 'bg-green-100 border border-green-300' : 'bg-gray-100 border border-gray-300 opacity-60'}`;
-
-                badgeElement.innerHTML = `
-                    <span class="text-5xl mb-2">${achievementDef.icon}</span>
-                    <h3 class="font-bold text-lg text-gray-800">${achievementDef.name}</h3>
-                    <p class="text-sm text-gray-600">${achievementDef.description}</p>
-                    ${isAwarded ? '<span class="text-xs text-green-700 font-semibold mt-2">EARNED!</span>' : ''}
-                `;
-                achievementsSubSectionElement.appendChild(badgeElement);
-            });
+        if (ACHIEVEMENTS.length === 0) {
+            achievementsSubSectionElement.innerHTML = '<p class="text-center text-gray-500 col-span-full">No achievements defined yet.</p>';
+            return;
         }
+
+        ACHIEVEMENTS.forEach(achievementDef => {
+            const isAwarded = awardedAchievements.some(a => a.id === achievementDef.id);
+            const badgeElement = document.createElement('div');
+            // Apply different styling based on whether the achievement is awarded
+            badgeElement.className = `p-4 rounded-lg shadow-md flex flex-col items-center text-center transition-all duration-300 transform hover:scale-105 ${isAwarded ? 'bg-green-100 border border-green-300' : 'bg-gray-100 border border-gray-300 opacity-50 grayscale'}`;
+
+            badgeElement.innerHTML = `
+                <span class="text-5xl mb-2">${achievementDef.icon}</span>
+                <h3 class="font-bold text-lg text-gray-800">${achievementDef.name}</h3>
+                <p class="text-sm text-gray-600">${achievementDef.description}</p>
+                ${isAwarded ? '<span class="text-xs text-green-700 font-semibold mt-2">EARNED!</span>' : ''}
+            `;
+            achievementsSubSectionElement.appendChild(badgeElement);
+        });
     } catch (error) {
         console.error('Error displaying achievements:', error);
         achievementsSubSectionElement.innerHTML = '<p class="text-center text-red-500 col-span-full">Error loading achievements.</p>';
