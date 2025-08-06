@@ -83,7 +83,7 @@
 
             <!-- App Version Text -->
             <div class="mt-8 text-center text-gray-500 text-xs">
-                App Version: <span id="appVersion">1.4.0</span>
+                App Version: <span id="appVersion">1.5.0</span>
             </div>
         </div>
 
@@ -156,7 +156,18 @@
             <!-- Content for workout plans will be rendered here by workoutDisplay.js -->
         </div>
 
-        <!-- Achievements View (New - Initially Hidden) -->
+        <!-- More View (New - Initially Hidden) -->
+        <div id="moreView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
+            <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">More Options</h1>
+            <div class="space-y-4">
+                <button id="showAchievementsFromMoreBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                    View Achievements
+                </button>
+                <!-- Future "More" options can go here -->
+            </div>
+        </div>
+
+        <!-- Achievements View (Now a sub-view of More, initially hidden) -->
         <div id="achievementsView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
             <!-- Achievements content will be rendered here by achievementsDisplay.js -->
         </div>
@@ -181,11 +192,7 @@
             <i class="fa-solid fa-calendar-alt text-xl sm:text-2xl"></i>
             <span>Plans</span>
         </a>
-        <a href="#achievements" id="navAchievements" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
-            <i class="fa-solid fa-trophy text-xl sm:text-2xl"></i>
-            <span>Achievements</span>
-        </a>
-        <a href="#" id="navMore" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
+        <a href="#more" id="navMore" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
             <i class="fa-solid fa-ellipsis text-xl sm:text-2xl"></i>
             <span>More</span>
         </a>
