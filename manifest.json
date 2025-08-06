@@ -1,11 +1,11 @@
 {
-    "name": "Step Tracker PWA",
-    "short_name": "Steps",
-    "description": "A simple Progressive Web App to track your daily steps.",
+    "name": "FitTrackr PWA",
+    "short_name": "FitTrackr",
+    "description": "A Progressive Web App to track your fitness habits, workouts, and achievements.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#4F46E5",
+    "theme_color": "#191970",
     "icons": [
         {
             "src": "/icons/icon-72x72.png",
