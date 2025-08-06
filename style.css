@@ -93,3 +93,19 @@ button:focus {
         opacity: .5;
     }
 }
+
+/* Toast Notification Styles (New) */
+#toastNotification {
+    /* Initial state: hidden */
+    visibility: hidden;
+    opacity: 0;
+    transform: translate(-50%, 20px); /* Start slightly below its final position */
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, visibility 0.5s;
+}
+
+#toastNotification.show {
+    /* Show state */
+    visibility: visible;
+    opacity: 1;
+    transform: translate(-50%, 0); /* Slide up to final position */
+}
