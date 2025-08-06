@@ -33,15 +33,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const trackingView = document.getElementById('trackingView');
     const workoutsView = document.getElementById('workoutsView');
     const workoutPlansView = document.getElementById('workoutPlansView');
-    const achievementsView = document.getElementById('achievementsView'); // New achievements view container
+    const moreView = document.getElementById('moreView'); // New: More view container
+    const achievementsView = document.getElementById('achievementsView'); // Achievements view is now a sub-view of More
 
     // Navigation Links
     const navDashboard = document.getElementById('navDashboard');
     const navTracking = document.getElementById('navTracking');
     const navWorkouts = document.getElementById('navWorkouts');
     const navPlans = document.getElementById('navPlans');
-    const navAchievements = document.getElementById('navAchievements'); // New Achievements navigation link
-    const navMore = document.getElementById('navMore');
+    const navMore = document.getElementById('navMore'); // Existing More navigation link
 
     // Set the app version
     appVersionSpan.textContent = '1.5.0'; // Updated version for new feature
@@ -52,7 +52,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         trackingView.classList.add('hidden');
         workoutsView.classList.add('hidden');
         workoutPlansView.classList.add('hidden');
-        achievementsView.classList.add('hidden'); // Hide achievements view
+        moreView.classList.add('hidden'); // Hide More view
+        achievementsView.classList.add('hidden'); // Hide achievements view (when switching from other main tabs)
         // Add more views here as you add them
 
         viewToShow.classList.remove('hidden');
@@ -68,6 +69,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             activeNavLink.classList.add('bg-indigo-600'); // Add active background
         }
     }
+
+    // Function to render the content of the "More" view
+    function renderMoreView() {
+        // This function can be expanded to render more options in the future
+        // For now, it just makes sure the achievements button is visible and clickable.
+        const showAchievementsBtn = document.getElementById('showAchievementsFromMoreBtn');
+        if (showAchievementsBtn) {
+            showAchievementsBtn.onclick = async (e) => {
+                e.preventDefault();
+                // When clicking "View Achievements" from "More", we don't change the active nav link for "More"
+                showView(achievementsView, navMore); // Keep 'More' active
+                await renderAchievementsView(achievementsView);
+            };
+        }
+    }
+
 
     // Initial load logic
     try {
@@ -113,10 +130,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await renderWorkoutPlansView(workoutPlansView);
     });
 
-    navAchievements.addEventListener('click', async (e) => { // New event listener for Achievements tab
+    navMore.addEventListener('click', async (e) => { // Existing event listener for More tab
         e.preventDefault();
-        showView(achievementsView, navAchievements);
-        await renderAchievementsView(achievementsView);
+        showView(moreView, navMore);
+        renderMoreView(); // Render content specific to the More view
     });
 
     // Event listener for the save button
