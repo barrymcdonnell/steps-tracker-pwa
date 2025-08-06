@@ -2,7 +2,8 @@
 import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
 import { formatDate } from './utils.js';
 import { displayProgress, displayDashboardSummary } from './display.js';
-import { renderWorkoutsView, renderWorkoutPlansView } from './workoutDisplay.js'; // Import new renderWorkoutPlansView
+import { renderWorkoutsView, renderWorkoutPlansView, displayNextScheduledWorkout } from './workoutDisplay.js';
+import { renderAchievementsView, checkAndAwardAchievements } from './achievementsDisplay.js'; // Import new achievement functions
 
 document.addEventListener('DOMContentLoaded', async () => {
     const stepsInput = document.getElementById('stepsInput');
@@ -31,24 +32,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dashboardView = document.getElementById('dashboardView');
     const trackingView = document.getElementById('trackingView');
     const workoutsView = document.getElementById('workoutsView');
-    const workoutPlansView = document.getElementById('workoutPlansView'); // New workout plans view container
+    const workoutPlansView = document.getElementById('workoutPlansView');
+    const achievementsView = document.getElementById('achievementsView'); // New achievements view container
 
     // Navigation Links
     const navDashboard = document.getElementById('navDashboard');
     const navTracking = document.getElementById('navTracking');
     const navWorkouts = document.getElementById('navWorkouts');
-    const navPlans = document.getElementById('navPlans'); // New Plans navigation link
+    const navPlans = document.getElementById('navPlans');
+    const navAchievements = document.getElementById('navAchievements'); // New Achievements navigation link
     const navMore = document.getElementById('navMore');
 
     // Set the app version
-    appVersionSpan.textContent = '1.4.0'; // Updated version for new feature
+    appVersionSpan.textContent = '1.5.0'; // Updated version for new feature
 
     // Function to show a specific view and update active nav link
     function showView(viewToShow, activeNavLink) {
         dashboardView.classList.add('hidden');
         trackingView.classList.add('hidden');
         workoutsView.classList.add('hidden');
-        workoutPlansView.classList.add('hidden'); // Hide workout plans view
+        workoutPlansView.classList.add('hidden');
+        achievementsView.classList.add('hidden'); // Hide achievements view
         // Add more views here as you add them
 
         viewToShow.classList.remove('hidden');
@@ -70,6 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await openDatabase(); // Initialize the database
         // Display dashboard summary on initial load
         await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+        await displayNextScheduledWorkout(); // Call new function to display next workout
         showView(dashboardView, navDashboard); // Show dashboard by default
     } catch (error) {
         console.error('Failed to initialize app:', error);
@@ -85,6 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         showView(dashboardView, navDashboard);
         // Re-render dashboard summary if needed (e.g., if data changed while on another tab)
         displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+        displayNextScheduledWorkout(); // Also update next scheduled workout
     });
 
     navTracking.addEventListener('click', (e) => {
@@ -101,10 +107,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         await renderWorkoutsView(workoutsView);
     });
 
-    navPlans.addEventListener('click', async (e) => { // New event listener for Plans tab
+    navPlans.addEventListener('click', async (e) => {
         e.preventDefault();
         showView(workoutPlansView, navPlans);
         await renderWorkoutPlansView(workoutPlansView);
+    });
+
+    navAchievements.addEventListener('click', async (e) => { // New event listener for Achievements tab
+        e.preventDefault();
+        showView(achievementsView, navAchievements);
+        await renderAchievementsView(achievementsView);
     });
 
     // Event listener for the save button
@@ -192,8 +204,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 caloriesInput.value = '';
             }
 
+            // After all data is potentially saved, check for achievements
+            await checkAndAwardAchievements();
+
             // Re-render dashboard summary after saving
             await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+            await displayNextScheduledWorkout(); // Update next scheduled workout after saving data
             // If currently on tracking view, also update it
             if (!trackingView.classList.contains('hidden')) {
                 await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
