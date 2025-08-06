@@ -1,40 +1,47 @@
 // workoutDisplay.js
 import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME, WORKOUT_PLANS_STORE_NAME } from './db.js';
 import { EXERCISE_TYPES, WORKOUT_CATEGORIES, DEFAULT_EXERCISE_SETTINGS } from './workoutConstants.js';
-import { formatDate } from './utils.js'; // Import formatDate for session date
-import { checkAndAwardAchievements } from './achievementsDisplay.js'; // Import achievement functions
+import { formatDate } from './utils.js';
+import { checkAndAwardAchievements } from './achievementsDisplay.js';
 
-// DOM elements (will be dynamically assigned within renderWorkoutsView)
-let workoutViewElement; // The main container for the entire workout section
-let workoutSubSectionElement; // A sub-container within workoutViewElement for forms/lists
+// DOM elements for Workouts View
+let workoutViewElement; // The main container for the Workouts section
+let workoutSubSectionElement; // A sub-container within workoutViewElement for forms/lists related to workouts
 
-// DOM element for workout plans view (new)
+// DOM elements for Workout Plans View
 let workoutPlansViewElement;
 let workoutPlansSubSectionElement;
 
+// DOM elements for Exercises View (NEW)
+let exercisesViewElement; // The main container for the Exercises section
+let exercisesSubSectionElement; // A sub-container within exercisesViewElement for forms/lists related to exercises
+
 /**
- * Hides all sub-sections within the workout view to prepare for rendering a new one.
- * This is crucial because we are dynamically updating a single sub-section container.
+ * Hides all sub-sections across different main views to prepare for rendering a new one.
  */
 function hideAllWorkoutSubSections() {
-    // Since forms and lists are rendered into workoutSubSectionElement,
-    // we just need to clear its content when switching.
+    // Clear workout-related sub-sections
     if (workoutSubSectionElement) {
         workoutSubSectionElement.innerHTML = '';
     }
-    // Also clear workout plans sub-section if it exists
+    // Clear workout plans sub-sections
     if (workoutPlansSubSectionElement) {
         workoutPlansSubSectionElement.innerHTML = '';
+    }
+    // NEW: Clear exercise sub-sections
+    if (exercisesSubSectionElement) {
+        exercisesSubSectionElement.innerHTML = '';
     }
 }
 
 /**
  * Renders the form for adding a new exercise.
+ * This now uses exercisesSubSectionElement.
  */
 function renderAddExerciseForm() {
-    if (!workoutSubSectionElement) return; // Ensure element is available
+    if (!exercisesSubSectionElement) return; // Ensure element is available
 
-    workoutSubSectionElement.innerHTML = `
+    exercisesSubSectionElement.innerHTML = `
         <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Add New Exercise</h2>
         <div class="mb-4">
             <label for="exerciseNameInput" class="block text-gray-700 text-sm font-semibold mb-2">Exercise Name:</label>
@@ -71,14 +78,13 @@ function renderAddExerciseForm() {
         }
 
         try {
-            // ID will be auto-incremented by IndexedDB
             const newExercise = { name, type };
             await saveDailyData(EXERCISES_STORE_NAME, newExercise);
             exerciseFormMessage.textContent = 'Exercise saved successfully!';
             exerciseFormMessage.className = 'text-center text-green-500 text-sm mt-2';
-            exerciseNameInput.value = ''; // Clear input
-            // Optionally, you could immediately show the list of exercises here
-            // await displayExercises();
+            exerciseNameInput.value = '';
+            // After saving, display the list of exercises
+            await displayExercises();
         } catch (error) {
             console.error('Error saving exercise:', error);
             exerciseFormMessage.textContent = 'Failed to save exercise. Please try again.';
@@ -89,11 +95,12 @@ function renderAddExerciseForm() {
 
 /**
  * Displays the list of exercises.
+ * This now uses exercisesSubSectionElement.
  */
 async function displayExercises() {
-    if (!workoutSubSectionElement) return; // Ensure element is available
+    if (!exercisesSubSectionElement) return; // Ensure element is available
 
-    workoutSubSectionElement.innerHTML = `
+    exercisesSubSectionElement.innerHTML = `
         <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Exercises</h2>
         <ul id="currentExerciseList" class="space-y-3"></ul>
         <button id="addExerciseFromListBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105 mt-4">Add New Exercise</button>
@@ -103,7 +110,7 @@ async function displayExercises() {
     const addExerciseFromListBtn = document.getElementById('addExerciseFromListBtn');
 
     addExerciseFromListBtn.addEventListener('click', () => {
-        hideAllWorkoutSubSections();
+        hideAllWorkoutSubSections(); // Clear other sub-sections
         renderAddExerciseForm();
     });
 
@@ -128,7 +135,6 @@ async function displayExercises() {
             document.querySelectorAll('.delete-exercise-btn').forEach(button => {
                 button.addEventListener('click', async (e) => {
                     const exerciseId = parseInt(e.currentTarget.dataset.id, 10);
-                    // Using a simple confirm for now, will replace with custom modal later
                     if (confirm('Are you sure you want to delete this exercise?')) {
                         await deleteItemById(EXERCISES_STORE_NAME, exerciseId);
                         await displayExercises(); // Refresh list after deletion
@@ -143,7 +149,50 @@ async function displayExercises() {
 }
 
 /**
+ * Renders the main Exercises view with options to add or view exercises.
+ * This is the entry point for the Exercises section (accessed via More).
+ * @param {HTMLElement} viewElement - The main container for the exercises view.
+ */
+export async function renderExercisesView(viewElement) {
+    exercisesViewElement = viewElement; // Assign the main exercises view element
+
+    exercisesViewElement.innerHTML = `
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Exercises</h1>
+        <div class="space-y-4">
+            <button id="showAddExerciseFormBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                Add New Exercise
+            </button>
+            <button id="showExercisesListBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                View All Exercises
+            </button>
+        </div>
+        <div id="exercisesSubSection" class="mt-8">
+            <!-- Sub-sections (add exercise form, exercise list) will be rendered here -->
+        </div>
+    `;
+
+    // Assign the sub-section container after it's rendered
+    exercisesSubSectionElement = exercisesViewElement.querySelector('#exercisesSubSection');
+
+    // Add event listeners to the exercise navigation buttons
+    document.getElementById('showAddExerciseFormBtn').addEventListener('click', () => {
+        hideAllWorkoutSubSections(); // Clear other sub-sections
+        renderAddExerciseForm();
+    });
+
+    document.getElementById('showExercisesListBtn').addEventListener('click', async () => {
+        hideAllWorkoutSubSections(); // Clear other sub-sections
+        await displayExercises();
+    });
+
+    // Automatically display exercises when the view is rendered
+    await displayExercises();
+}
+
+
+/**
  * Renders the form for creating a new workout routine.
+ * This now uses workoutSubSectionElement.
  */
 async function renderAddWorkoutForm() {
     if (!workoutSubSectionElement) return; // Ensure element is available
@@ -185,7 +234,7 @@ async function renderAddWorkoutForm() {
         exerciseSelectionDiv.innerHTML = ''; // Clear loading message
 
         if (exercises.length === 0) {
-            exerciseSelectionDiv.innerHTML = '<p class="text-center text-gray-500">No exercises added yet. Go to "Add New Exercise" to create some.</p>';
+            exerciseSelectionDiv.innerHTML = '<p class="text-center text-gray-500">No exercises added yet. Go to "More -> View Exercises" to create some.</p>';
             saveWorkoutBtn.disabled = true; // Disable save if no exercises
         } else {
             exercises.forEach(exercise => {
@@ -212,7 +261,7 @@ async function renderAddWorkoutForm() {
         const selectedExercises = Array.from(exerciseSelectionDiv.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => ({
             id: parseInt(checkbox.value, 10),
             name: checkbox.dataset.name,
-            type: checkbox.dataset.type, // Include type for display in workout details
+            type: checkbox.dataset.type,
             sets: DEFAULT_EXERCISE_SETTINGS.SETS,
             reps: DEFAULT_EXERCISE_SETTINGS.REPS
         }));
@@ -233,10 +282,8 @@ async function renderAddWorkoutForm() {
             await saveDailyData(WORKOUTS_STORE_NAME, newWorkout);
             workoutFormMessage.textContent = 'Workout saved successfully!';
             workoutFormMessage.className = 'text-center text-green-500 text-sm mt-2';
-            workoutNameInput.value = ''; // Clear input
-            // Uncheck all checkboxes
+            workoutNameInput.value = '';
             exerciseSelectionDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
-            // Redirect back to workouts list after successful save
             await displayWorkouts();
         } catch (error) {
             console.error('Error saving workout:', error);
@@ -248,6 +295,7 @@ async function renderAddWorkoutForm() {
 
 /**
  * Displays the list of workout routines.
+ * This now uses workoutSubSectionElement.
  */
 async function displayWorkouts() {
     if (!workoutSubSectionElement) return; // Ensure element is available
@@ -310,7 +358,6 @@ async function displayWorkouts() {
             document.querySelectorAll('.delete-workout-btn').forEach(button => {
                 button.addEventListener('click', async (e) => {
                     const workoutId = parseInt(e.currentTarget.dataset.id, 10);
-                    // Using a simple confirm for now, will will replace with custom modal later
                     if (confirm('Are you sure you want to delete this workout?')) {
                         await deleteItemById(WORKOUTS_STORE_NAME, workoutId);
                         await displayWorkouts(); // Refresh list after deletion
@@ -346,7 +393,49 @@ async function displayWorkouts() {
 }
 
 /**
+ * Renders the main Workouts view with options to add or view workouts.
+ * This is the entry point for the Workouts tab.
+ * @param {HTMLElement} viewElement - The main container for the workout view from main.js.
+ */
+export async function renderWorkoutsView(viewElement) {
+    workoutViewElement = viewElement; // Assign the main workout view element
+
+    workoutViewElement.innerHTML = `
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Workouts</h1>
+        <div class="space-y-4">
+            <button id="showAddWorkoutFormBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                Create New Workout
+            </button>
+            <button id="showWorkoutsListBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
+                View All Workouts
+            </button>
+        </div>
+        <div id="workoutSubSection" class="mt-8">
+            <!-- Sub-sections (add workout, workout list) will be rendered here -->
+        </div>
+    `;
+
+    // Assign the sub-section container after it's rendered
+    workoutSubSectionElement = workoutViewElement.querySelector('#workoutSubSection');
+
+    // Add event listeners to the main workout navigation buttons
+    document.getElementById('showAddWorkoutFormBtn').addEventListener('click', () => {
+        hideAllWorkoutSubSections(); // Clear other sub-sections
+        renderAddWorkoutForm();
+    });
+
+    document.getElementById('showWorkoutsListBtn').addEventListener('click', async () => {
+        hideAllWorkoutSubSections(); // Clear other sub-sections
+        await displayWorkouts();
+    });
+
+    // Automatically display workouts when the view is rendered
+    await displayWorkouts();
+}
+
+/**
  * Renders the form to view/edit a specific workout routine.
+ * This now uses workoutSubSectionElement.
  * @param {number} workoutId - The ID of the workout to view/edit.
  */
 async function renderWorkoutDetailsForm(workoutId) {
@@ -358,7 +447,6 @@ async function renderWorkoutDetailsForm(workoutId) {
         return;
     }
 
-    // Fetch all exercises to populate the selection for adding/removing
     const allExercises = await getAllDailyData(EXERCISES_STORE_NAME);
 
     workoutSubSectionElement.innerHTML = `
@@ -391,7 +479,7 @@ async function renderWorkoutDetailsForm(workoutId) {
 
         <h3 class="text-lg font-semibold text-gray-800 mt-6 mb-3">Add/Remove Exercises:</h3>
         <div id="editExerciseSelection" class="space-y-2 mb-4 p-2 border rounded-lg bg-gray-50">
-            ${allExercises.length === 0 ? '<p class="text-center text-gray-500">No exercises available to add.</p>' : ''}
+            ${allExercises.length === 0 ? '<p class="text-center text-gray-500">No exercises available to add. Go to "More -> View Exercises" to create some.</p>' : ''}
             ${allExercises.map(exercise => {
                 const isSelected = workout.exercises.some(ex => ex.id === exercise.id);
                 return `
@@ -434,8 +522,8 @@ async function renderWorkoutDetailsForm(workoutId) {
             id: parseInt(checkbox.value, 10),
             name: checkbox.dataset.name,
             type: checkbox.dataset.type,
-            sets: DEFAULT_EXERCISE_SETTINGS.SETS, // Retain default or allow editing later
-            reps: DEFAULT_EXERCISE_SETTINGS.REPS // Retain default or allow editing later
+            sets: DEFAULT_EXERCISE_SETTINGS.SETS,
+            reps: DEFAULT_EXERCISE_SETTINGS.REPS
         }));
 
         if (!name) {
@@ -451,10 +539,9 @@ async function renderWorkoutDetailsForm(workoutId) {
 
         try {
             const updatedWorkout = { id: workoutId, name, category, exercises: selectedExercises };
-            await saveDailyData(WORKOUTS_STORE_NAME, updatedWorkout); // Use saveDailyData to update by ID
+            await saveDailyData(WORKOUTS_STORE_NAME, updatedWorkout);
             editWorkoutFormMessage.textContent = 'Workout updated successfully!';
             editWorkoutFormMessage.className = 'text-center text-green-500 text-sm mt-2';
-            // Redirect back to workouts list after successful update
             await displayWorkouts();
         } catch (error) {
             console.error('Error updating workout:', error);
@@ -466,6 +553,7 @@ async function renderWorkoutDetailsForm(workoutId) {
 
 /**
  * Renders the interface for starting and tracking a workout session.
+ * This now uses workoutSubSectionElement.
  * @param {number} workoutId - The ID of the workout routine to start.
  */
 async function renderStartWorkoutSession(workoutId) {
@@ -482,7 +570,6 @@ async function renderStartWorkoutSession(workoutId) {
         <p class="text-center text-gray-600 mb-6">Track your sets by checking the boxes.</p>
 
         <div id="workoutSessionExercises" class="space-y-4">
-            <!-- Exercises and sets will be rendered here -->
             ${workout.exercises.map((exercise, exIndex) => `
                 <div class="bg-gray-100 p-4 rounded-lg shadow-sm">
                     <h3 class="font-bold text-lg text-indigo-700 mb-2">${exercise.name} <span class="text-sm text-gray-600">(${exercise.type})</span></h3>
@@ -516,24 +603,20 @@ async function renderStartWorkoutSession(workoutId) {
     const workoutSessionMessage = document.getElementById('workoutSessionMessage');
     const workoutSessionExercisesContainer = document.getElementById('workoutSessionExercises');
 
-    // Store the workout details in a data attribute or global variable for easy access
     workoutSessionExercisesContainer.dataset.workoutId = workout.id;
     workoutSessionExercisesContainer.dataset.workoutName = workout.name;
 
-    // Event listener for the "Finish Workout" button
     finishWorkoutSessionBtn.addEventListener('click', async () => {
         const today = formatDate(new Date());
         const completedExercises = [];
         let allSetsCompleted = true;
 
-        // Iterate through each exercise container
         workoutSessionExercisesContainer.querySelectorAll('.bg-gray-100').forEach(exerciseDiv => {
             const exerciseId = parseInt(exerciseDiv.querySelector('input[type="checkbox"]').dataset.exerciseId, 10);
-            const exerciseName = exerciseDiv.querySelector('h3').textContent.split('(')[0].trim(); // Extract name
+            const exerciseName = exerciseDiv.querySelector('h3').textContent.split('(')[0].trim();
             const completedSets = [];
             let setsForThisExerciseCompleted = 0;
 
-            // Iterate through checkboxes for each set
             exerciseDiv.querySelectorAll('input[type="checkbox"]').forEach((checkbox, setIndex) => {
                 if (checkbox.checked) {
                     completedSets.push(setIndex + 1);
@@ -541,26 +624,24 @@ async function renderStartWorkoutSession(workoutId) {
                 }
             });
 
-            // Check if all sets for this exercise were completed
-            const totalSets = parseInt(exerciseDiv.querySelector('p').textContent.split(' ')[0], 10); // Extract total sets
+            const totalSets = parseInt(exerciseDiv.querySelector('p').textContent.split(' ')[0], 10);
             if (setsForThisExerciseCompleted < totalSets) {
-                allSetsCompleted = false; // Mark if any exercise has incomplete sets
+                allSetsCompleted = false;
             }
 
             completedExercises.push({
                 exerciseId: exerciseId,
                 exerciseName: exerciseName,
                 completedSets: completedSets,
-                totalSets: totalSets // Store total sets for reference
+                totalSets: totalSets
             });
         });
 
         if (!allSetsCompleted) {
             workoutSessionMessage.textContent = 'Warning: Not all sets were completed. You can still finish the workout, or complete remaining sets.';
             workoutSessionMessage.className = 'text-center text-orange-500 text-sm mt-2';
-            // You might want to add a confirmation dialog here for incomplete workouts
         } else {
-            workoutSessionMessage.textContent = ''; // Clear any previous warning
+            workoutSessionMessage.textContent = '';
         }
 
         try {
@@ -569,21 +650,19 @@ async function renderStartWorkoutSession(workoutId) {
                 workoutId: workout.id,
                 workoutName: workout.name,
                 exercisesPerformed: completedExercises,
-                completed: allSetsCompleted, // Indicates if all sets across all exercises were completed
-                timestamp: new Date().toISOString() // Useful for sorting/unique identification
+                completed: allSetsCompleted,
+                timestamp: new Date().toISOString()
             };
             await saveDailyData(WORKOUT_SESSIONS_STORE_NAME, sessionData);
             workoutSessionMessage.textContent = 'Workout session saved successfully!';
             workoutSessionMessage.className = 'text-center text-green-500 text-sm mt-2';
 
-            // Check for achievements after a workout session is saved
             await checkAndAwardAchievements();
 
-            // After a short delay, redirect back to the workouts list
             setTimeout(async () => {
                 hideAllWorkoutSubSections();
                 await displayWorkouts();
-            }, 1500); // Wait 1.5 seconds to show success message
+            }, 1500);
         } catch (error) {
             console.error('Error saving workout session:', error);
             workoutSessionMessage.textContent = 'Failed to save workout session. Please try again.';
@@ -591,78 +670,22 @@ async function renderStartWorkoutSession(workoutId) {
         }
     });
 
-    // Event listener for the "Cancel Workout" button
     cancelWorkoutSessionBtn.addEventListener('click', async () => {
         if (confirm('Are you sure you want to cancel this workout session? Any progress will be lost.')) {
             hideAllWorkoutSubSections();
-            await displayWorkouts(); // Go back to workout list without saving
+            await displayWorkouts();
         }
     });
 }
 
-
-/**
- * Renders the main Workouts view with options to add exercises/workouts or view them.
- * This is the entry point for the workouts tab.
- * @param {HTMLElement} viewElement - The main container for the workout view from main.js.
- */
-export async function renderWorkoutsView(viewElement) {
-    workoutViewElement = viewElement; // Assign the main workout view element
-
-    workoutViewElement.innerHTML = `
-        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Workouts</h1>
-        <div class="space-y-4">
-            <button id="showAddExerciseFormBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-                Add New Exercise
-            </button>
-            <button id="showExercisesListBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-                View All Exercises
-            </button>
-            <button id="showAddWorkoutFormBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-                Create New Workout
-            </button>
-            <button id="showWorkoutsListBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105">
-                View All Workouts
-            </button>
-        </div>
-        <div id="workoutSubSection" class="mt-8">
-            <!-- Sub-sections (add exercise, exercise list, add workout, workout list) will be rendered here -->
-        </div>
-    `;
-
-    // Assign the sub-section container after it's rendered
-    workoutSubSectionElement = workoutViewElement.querySelector('#workoutSubSection');
-
-    // Add event listeners to the main workout navigation buttons
-    document.getElementById('showAddExerciseFormBtn').addEventListener('click', () => {
-        hideAllWorkoutSubSections();
-        renderAddExerciseForm();
-    });
-
-    document.getElementById('showExercisesListBtn').addEventListener('click', async () => {
-        hideAllWorkoutSubSections();
-        await displayExercises();
-    });
-
-    document.getElementById('showAddWorkoutFormBtn').addEventListener('click', () => {
-        hideAllWorkoutSubSections();
-        renderAddWorkoutForm();
-    });
-
-    document.getElementById('showWorkoutsListBtn').addEventListener('click', async () => {
-        hideAllWorkoutSubSections();
-        await displayWorkouts();
-    });
-}
-
-// --- Workout Plans Functions (New) ---
+// --- Workout Plans Functions ---
 
 /**
  * Renders the initial view for Workout Plans.
  * @param {HTMLElement} viewElement - The main container for the workout plans view from main.js.
  */
 export async function renderWorkoutPlansView(viewElement) {
-    workoutPlansViewElement = viewElement; // Assign the main workout plans view element
+    workoutPlansViewElement = viewElement;
 
     workoutPlansViewElement.innerHTML = `
         <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">Workout Plans</h1>
@@ -679,21 +702,18 @@ export async function renderWorkoutPlansView(viewElement) {
         </div>
     `;
 
-    // Assign the sub-section container after it's rendered
     workoutPlansSubSectionElement = workoutPlansViewElement.querySelector('#workoutPlansSubSection');
 
-    // Add event listeners to the workout plan navigation buttons
     document.getElementById('showAddWorkoutPlanFormBtn').addEventListener('click', () => {
-        hideAllWorkoutSubSections(); // Hide other workout sub-sections
+        hideAllWorkoutSubSections(); // Clear other sub-sections
         renderAddWorkoutPlanForm();
     });
 
     document.getElementById('showWorkoutPlansListBtn').addEventListener('click', async () => {
-        hideAllWorkoutSubSections(); // Hide other workout sub-sections
+        hideAllWorkoutSubSections(); // Clear other sub-sections
         await displayWorkoutPlans();
     });
 
-    // Automatically display workout plans when the view is rendered
     await displayWorkoutPlans();
 }
 
@@ -703,10 +723,8 @@ export async function renderWorkoutPlansView(viewElement) {
 async function renderAddWorkoutPlanForm() {
     if (!workoutPlansSubSectionElement) return;
 
-    // Fetch all available workouts to populate the dropdowns
     const workouts = await getAllDailyData(WORKOUTS_STORE_NAME);
 
-    // Helper function to create a single workout-day input row
     function createWorkoutDayRow(workoutId = '', dayOfWeek = '') {
         const uniqueId = `workout-day-row-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         return `
@@ -776,32 +794,27 @@ async function renderAddWorkoutPlanForm() {
     const saveWorkoutPlanBtn = document.getElementById('saveWorkoutPlanBtn');
     const workoutPlanFormMessage = document.getElementById('workoutPlanFormMessage');
 
-    // Set today's date as default for start date
     planStartDate.value = formatDate(new Date());
 
-    // Add initial workout day row if workouts are available
     if (workouts.length > 0) {
         scheduledWorkoutsContainer.insertAdjacentHTML('beforeend', createWorkoutDayRow());
     }
 
-    // Event listener for adding more workout day rows
     addWorkoutDayBtn.addEventListener('click', () => {
         scheduledWorkoutsContainer.insertAdjacentHTML('beforeend', createWorkoutDayRow());
-        // Re-attach listeners for new remove buttons
         attachRemoveButtonListeners();
     });
 
-    // Function to attach event listeners to remove buttons
     function attachRemoveButtonListeners() {
         scheduledWorkoutsContainer.querySelectorAll('.remove-workout-day-btn').forEach(button => {
-            button.onclick = null; // Remove previous listeners to prevent duplicates
+            button.onclick = null;
             button.addEventListener('click', (e) => {
                 const rowId = e.currentTarget.dataset.rowId;
                 document.getElementById(rowId).remove();
             });
         });
     }
-    attachRemoveButtonListeners(); // Attach for initial row
+    attachRemoveButtonListeners();
 
     saveWorkoutPlanBtn.addEventListener('click', async () => {
         const name = planNameInput.value.trim();
@@ -822,7 +835,7 @@ async function renderAddWorkoutPlanForm() {
                 isValid = false;
                 workoutPlanFormMessage.textContent = 'Please select a workout and a day for all scheduled entries.';
                 workoutPlanFormMessage.className = 'text-center text-red-500 text-sm mt-2';
-                return; // Exit forEach early
+                return;
             }
 
             const selectedWorkout = workouts.find(w => w.id === workoutId);
@@ -830,7 +843,7 @@ async function renderAddWorkoutPlanForm() {
                 isValid = false;
                 workoutPlanFormMessage.textContent = 'One or more selected workouts not found.';
                 workoutPlanFormMessage.className = 'text-center text-red-500 text-sm mt-2';
-                return; // Exit forEach early
+                return;
             }
 
             scheduledWorkouts.push({
@@ -840,7 +853,7 @@ async function renderAddWorkoutPlanForm() {
             });
         });
 
-        if (!isValid) return; // Stop if any validation failed during row iteration
+        if (!isValid) return;
 
         if (!name || !startDate || isNaN(durationWeeks) || durationWeeks <= 0) {
             workoutPlanFormMessage.textContent = 'Please fill in all plan details correctly (name, start date, duration).';
@@ -859,24 +872,21 @@ async function renderAddWorkoutPlanForm() {
                 name: name,
                 startDate: startDate,
                 durationWeeks: durationWeeks,
-                scheduledWorkouts: scheduledWorkouts // Array of { dayOfWeek, workoutId, workoutName }
+                scheduledWorkouts: scheduledWorkouts
             };
             await saveDailyData(WORKOUT_PLANS_STORE_NAME, newPlan);
             workoutPlanFormMessage.textContent = 'Workout plan saved successfully!';
             workoutPlanFormMessage.className = 'text-center text-green-500 text-sm mt-2';
 
-            // Clear form (reset to initial state)
             planNameInput.value = '';
             planStartDate.value = formatDate(new Date());
             planDurationWeeks.value = '6';
-            scheduledWorkoutsContainer.innerHTML = ''; // Clear all dynamic rows
+            scheduledWorkoutsContainer.innerHTML = '';
             if (workouts.length > 0) {
-                scheduledWorkoutsContainer.insertAdjacentHTML('beforeend', createWorkoutDayRow()); // Add back one empty row
-                attachRemoveButtonListeners(); // Re-attach listeners
+                scheduledWorkoutsContainer.insertAdjacentHTML('beforeend', createWorkoutDayRow());
+                attachRemoveButtonListeners();
             }
 
-
-            // Redirect back to workout plans list after successful save
             setTimeout(async () => {
                 await displayWorkoutPlans();
             }, 1500);
@@ -890,7 +900,6 @@ async function renderAddWorkoutPlanForm() {
 
 /**
  * Renders the detailed view of a specific workout plan.
- * @param {number} planId - The ID of the workout plan to view.
  */
 async function renderViewWorkoutPlanDetails(planId) {
     if (!workoutPlansSubSectionElement) return;
@@ -931,7 +940,6 @@ async function renderViewWorkoutPlanDetails(planId) {
     });
 }
 
-
 /**
  * Displays the list of workout plans.
  */
@@ -959,7 +967,7 @@ async function displayWorkoutPlans() {
         } else {
             plans.forEach(plan => {
                 const listItem = document.createElement('li');
-                listItem.className = 'p-3 rounded-lg flex flex-col bg-gray-100'; // Changed to flex-col for stacked content
+                listItem.className = 'p-3 rounded-lg flex flex-col bg-gray-100';
                 listItem.innerHTML = `
                     <div class="flex justify-between items-center w-full mb-2">
                         <span class="font-bold text-lg text-gray-800">${plan.name}</span>
@@ -986,12 +994,11 @@ async function displayWorkoutPlans() {
                     const planId = parseInt(e.currentTarget.dataset.id, 10);
                     if (confirm('Are you sure you want to delete this workout plan?')) {
                         await deleteItemById(WORKOUT_PLANS_STORE_NAME, planId);
-                        await displayWorkoutPlans(); // Refresh list after deletion
+                        await displayWorkoutPlans();
                     }
                 });
             });
 
-            // Add listener for the new View Details button
             document.querySelectorAll('.view-plan-btn').forEach(button => {
                 button.addEventListener('click', async (e) => {
                     const planId = parseInt(e.currentTarget.dataset.id, 10);
@@ -1008,7 +1015,6 @@ async function displayWorkoutPlans() {
 
 /**
  * Displays the next scheduled workout on the dashboard.
- * This function is exported to be called from main.js.
  */
 export async function displayNextScheduledWorkout() {
     const nextWorkoutDetailsElement = document.getElementById('nextWorkoutDetails');
@@ -1017,30 +1023,27 @@ export async function displayNextScheduledWorkout() {
         return;
     }
 
-    nextWorkoutDetailsElement.textContent = 'Checking plans...'; // Initial loading state
+    nextWorkoutDetailsElement.textContent = 'Checking plans...';
 
     try {
         const plans = await getAllDailyData(WORKOUT_PLANS_STORE_NAME);
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+        today.setHours(0, 0, 0, 0);
 
         const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
         let nextWorkout = null;
-        let nextWorkoutDate = null; // Stores the actual Date object of the next workout
+        let nextWorkoutDate = null;
 
         plans.forEach(plan => {
-            // Parse plan.startDate as a local date to match `today`'s normalization
             const parts = plan.startDate.split('-');
             const planStartDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-            planStartDate.setHours(0, 0, 0, 0); // Normalize to local midnight
+            planStartDate.setHours(0, 0, 0, 0);
 
             const planEndDate = new Date(planStartDate);
-            // Calculate planEndDate to be inclusive of the last day of the last week
             planEndDate.setDate(planStartDate.getDate() + (plan.durationWeeks * 7) - 1);
             planEndDate.setHours(0, 0, 0, 0);
 
-            // Skip plans that have already ended
             if (planEndDate < today) {
                 return;
             }
@@ -1050,24 +1053,19 @@ export async function displayNextScheduledWorkout() {
                 const currentDayIndex = today.getDay();
 
                 let potentialWorkoutDate = new Date(today);
-                potentialWorkoutDate.setHours(0, 0, 0, 0); // Ensure normalized
+                potentialWorkoutDate.setHours(0, 0, 0, 0);
 
-                // Calculate days until the next occurrence of the scheduled day
                 let daysOffset = scheduledDayIndex - currentDayIndex;
                 if (daysOffset < 0) {
-                    daysOffset += 7; // Wrap around to the next week
+                    daysOffset += 7;
                 }
                 potentialWorkoutDate.setDate(potentialWorkoutDate.getDate() + daysOffset);
 
-                // If this potential date is before the plan's start date,
-                // push it forward by a week until it's within or after the plan's start.
                 while (potentialWorkoutDate < planStartDate) {
                     potentialWorkoutDate.setDate(potentialWorkoutDate.getDate() + 7);
                 }
 
-                // Ensure the potential workout date is within the plan's overall duration
                 if (potentialWorkoutDate >= planStartDate && potentialWorkoutDate <= planEndDate) {
-                    // If this is the first workout found, or it's earlier than the previously found one
                     if (nextWorkoutDate === null || potentialWorkoutDate < nextWorkoutDate) {
                         nextWorkout = scheduledWorkout;
                         nextWorkoutDate = potentialWorkoutDate;
@@ -1078,7 +1076,7 @@ export async function displayNextScheduledWorkout() {
 
         if (nextWorkout) {
             const diffTime = nextWorkoutDate.getTime() - today.getTime();
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Use round to handle potential floating point issues
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             let displayDay = '';
             if (diffDays === 0) {
