@@ -141,10 +141,6 @@ async function initializeApp() {
     // Wait for the database to be initialized before proceeding
     await openDatabase();
     
-    // Determine the initial view based on the URL hash
-    const initialHash = window.location.hash.substring(1) || 'dashboard';
-    handleNavigation(initialHash);
-
     // Initial display of dashboard summary
     displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
     
@@ -152,14 +148,38 @@ async function initializeApp() {
     const defaultGradient = 'linear-gradient(to right, #22c55e, #16a34a)';
     const hoverGradient = 'linear-gradient(to right, #16a34a, #22c55e)';
     applyButtonHoverEffect(saveDailyDataBtn, defaultGradient, hoverGradient);
+
+    // Initial navigation to dashboard view
+    handleNavigation('dashboard');
 }
 
 // --- Event Listeners ---
 window.addEventListener('DOMContentLoaded', initializeApp);
 
-window.addEventListener('hashchange', () => {
-    const newHash = window.location.hash.substring(1) || 'dashboard';
-    handleNavigation(newHash);
+// Navigation link event listeners for direct user clicks
+navLinks.dashboard.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNavigation('dashboard');
+});
+
+navLinks.tracking.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNavigation('tracking');
+});
+
+navLinks.workouts.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNavigation('workouts');
+});
+
+navLinks.plans.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNavigation('plans');
+});
+
+navLinks.more.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNavigation('more');
 });
 
 // Event listener for saving daily data
@@ -194,10 +214,10 @@ saveDailyDataBtn.addEventListener('click', async () => {
 
 // Event listener for "View Achievements" button in More view
 showAchievementsFromMoreBtn.addEventListener('click', () => {
-    window.location.hash = '#achievements';
+    handleNavigation('achievements');
 });
 
 // Event listener for "View Exercises" button in More view
 showExercisesFromMoreBtn.addEventListener('click', () => {
-    window.location.hash = '#exercises';
+    handleNavigation('exercises');
 });
