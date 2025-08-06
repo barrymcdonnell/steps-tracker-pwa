@@ -2,6 +2,7 @@
 import { saveDailyData, getAllDailyData, deleteItemById, getItemById, EXERCISES_STORE_NAME, WORKOUTS_STORE_NAME, WORKOUT_SESSIONS_STORE_NAME, WORKOUT_PLANS_STORE_NAME } from './db.js';
 import { EXERCISE_TYPES, WORKOUT_CATEGORIES, DEFAULT_EXERCISE_SETTINGS } from './workoutConstants.js';
 import { formatDate } from './utils.js'; // Import formatDate for session date
+import { checkAndAwardAchievements } from './achievementsDisplay.js'; // Import achievement functions
 
 // DOM elements (will be dynamically assigned within renderWorkoutsView)
 let workoutViewElement; // The main container for the entire workout section
@@ -574,6 +575,9 @@ async function renderStartWorkoutSession(workoutId) {
             await saveDailyData(WORKOUT_SESSIONS_STORE_NAME, sessionData);
             workoutSessionMessage.textContent = 'Workout session saved successfully!';
             workoutSessionMessage.className = 'text-center text-green-500 text-sm mt-2';
+
+            // Check for achievements after a workout session is saved
+            await checkAndAwardAchievements();
 
             // After a short delay, redirect back to the workouts list
             setTimeout(async () => {
