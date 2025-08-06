@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const navMore = document.getElementById('navMore');
 
     // Set the app version
-    appVersionSpan.textContent = '1.6.0'; // Updated version for new feature
+    appVersionSpan.textContent = '1.6.1'; // Updated version for new feature
 
     // Function to show a specific view and update active nav link
     function showView(viewToShow, activeNavLink) {
