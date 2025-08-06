@@ -1,246 +1,166 @@
 // main.js
-import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
-import { formatDate } from './utils.js';
 import { displayProgress, displayDashboardSummary } from './display.js';
-// Import both renderWorkoutsView and renderExercisesView
-import { renderWorkoutsView, renderWorkoutPlansView, renderExercisesView, displayNextScheduledWorkout } from './workoutDisplay.js';
-import { renderAchievementsView, checkAndAwardAchievements } from './achievementsDisplay.js';
+import { saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
+import { formatDate } from './utils.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const stepsInput = document.getElementById('stepsInput');
-    const waterInput = document.getElementById('waterInput');
-    const caloriesInput = document.getElementById('caloriesInput');
-    const saveDailyDataBtn = document.getElementById('saveDailyDataBtn');
+// --- DOM Element References ---
+const views = {
+    dashboard: document.getElementById('dashboardView'),
+    tracking: document.getElementById('trackingView'),
+    workouts: document.getElementById('workoutsView'),
+    plans: document.getElementById('workoutPlansView'),
+    more: document.getElementById('moreView'),
+    exercises: document.getElementById('exercisesView'),
+    achievements: document.getElementById('achievementsView')
+};
 
-    // Dashboard Summary Elements
-    const todayStepsElement = document.getElementById('todaySteps');
-    const todayWaterElement = document.getElementById('todayWater');
-    const todayCaloriesElement = document.getElementById('todayCalories');
-    const todayStepsGoalElement = document.getElementById('todayStepsGoal');
-    const todayWaterGoalElement = document.getElementById('todayWaterGoal');
-    const todayCaloriesGoalElement = document.getElementById('todayCaloriesGoal');
+const navLinks = {
+    dashboard: document.getElementById('navDashboard'),
+    tracking: document.getElementById('navTracking'),
+    workouts: document.getElementById('navWorkouts'),
+    plans: document.getElementById('navPlans'),
+    more: document.getElementById('navMore')
+};
 
-    // Tracking View Elements
-    const stepsList = document.getElementById('stepsList');
-    const waterList = document.getElementById('waterList');
-    const caloriesList = document.getElementById('caloriesList');
-    const stepsChartCanvas = document.getElementById('stepsChart');
-    const waterChartCanvas = document.getElementById('waterChart');
-    const caloriesChartCanvas = document.getElementById('caloriesChart');
-    const appVersionSpan = document.getElementById('appVersion');
+// Dashboard Elements
+const stepsInput = document.getElementById('stepsInput');
+const waterInput = document.getElementById('waterInput');
+const caloriesInput = document.getElementById('caloriesInput');
+const saveDailyDataBtn = document.getElementById('saveDailyDataBtn');
 
-    // View Containers
-    const dashboardView = document.getElementById('dashboardView');
-    const trackingView = document.getElementById('trackingView');
-    const workoutsView = document.getElementById('workoutsView');
-    const workoutPlansView = document.getElementById('workoutPlansView');
-    const moreView = document.getElementById('moreView');
-    const exercisesView = document.getElementById('exercisesView'); // New exercises view container
-    const achievementsView = document.getElementById('achievementsView');
+// Dashboard Summary Elements
+const todayStepsElement = document.getElementById('todaySteps');
+const todayWaterElement = document.getElementById('todayWater');
+const todayCaloriesElement = document.getElementById('todayCalories');
+const todayStepsGoalElement = document.getElementById('todayStepsGoal');
+const todayWaterGoalElement = document.getElementById('todayWaterGoal');
+const todayCaloriesGoalElement = document.getElementById('todayCaloriesGoal');
 
-    // Navigation Links
-    const navDashboard = document.getElementById('navDashboard');
-    const navTracking = document.getElementById('navTracking');
-    const navWorkouts = document.getElementById('navWorkouts');
-    const navPlans = document.getElementById('navPlans');
-    const navMore = document.getElementById('navMore');
+// Tracking View Elements
+const stepsListElement = document.getElementById('stepsList');
+const waterListElement = document.getElementById('waterList');
+const caloriesListElement = document.getElementById('caloriesList');
+const stepsChartCanvasElement = document.getElementById('stepsChart');
+const waterChartCanvasElement = document.getElementById('waterChart');
+const caloriesChartCanvasElement = document.getElementById('caloriesChart');
 
-    // Set the app version
-    appVersionSpan.textContent = '1.6.3'; // Updated version for new feature
+// More View Elements
+const showAchievementsFromMoreBtn = document.getElementById('showAchievementsFromMoreBtn');
+const showExercisesFromMoreBtn = document.getElementById('showExercisesFromMoreBtn');
 
-    // Function to show a specific view and update active nav link
-    function showView(viewToShow, activeNavLink) {
-        dashboardView.classList.add('hidden');
-        trackingView.classList.add('hidden');
-        workoutsView.classList.add('hidden');
-        workoutPlansView.classList.add('hidden');
-        moreView.classList.add('hidden');
-        exercisesView.classList.add('hidden'); // Hide exercises view
-        achievementsView.classList.add('hidden');
+// Toast Notification Element
+const toastNotification = document.getElementById('toastNotification');
 
-        viewToShow.classList.remove('hidden');
+/**
+ * Shows a toast notification with a given message.
+ * @param {string} message - The message to display.
+ */
+function showToast(message) {
+    toastNotification.textContent = message;
+    toastNotification.classList.add('show');
+    // Hide the toast after 3 seconds
+    setTimeout(() => {
+        toastNotification.classList.remove('show');
+    }, 3000);
+}
 
-        // Remove active class from all nav links
-        document.querySelectorAll('.active-nav-link').forEach(link => {
-            link.classList.remove('active-nav-link');
-            // Removed: link.classList.remove('bg-indigo-600'); // This is now handled by CSS
-        });
-        // Add active class to the clicked nav link
-        if (activeNavLink) {
-            activeNavLink.classList.add('active-nav-link');
-            // Removed: activeNavLink.classList.add('bg-indigo-600'); // This is now handled by CSS
-        }
+/**
+ * Hides all main content views.
+ */
+function hideAllViews() {
+    Object.values(views).forEach(view => view.classList.add('hidden'));
+}
+
+/**
+ * Deactivates all navigation links.
+ */
+function deactivateAllNavLinks() {
+    Object.values(navLinks).forEach(link => link.classList.remove('active-nav-link'));
+}
+
+/**
+ * Handles the logic for switching between different views of the app.
+ * @param {string} viewName - The name of the view to switch to (e.g., 'dashboard', 'tracking').
+ */
+function handleNavigation(viewName) {
+    hideAllViews();
+    deactivateAllNavLinks();
+    
+    // Show the requested view
+    const targetView = views[viewName];
+    if (targetView) {
+        targetView.classList.remove('hidden');
     }
 
-    // Function to render the content of the "More" view
-    function renderMoreView() {
-        const showAchievementsBtn = document.getElementById('showAchievementsFromMoreBtn');
-        if (showAchievementsBtn) {
-            showAchievementsBtn.onclick = async (e) => {
-                e.preventDefault();
-                showView(achievementsView, navMore);
-                await renderAchievementsView(achievementsView);
-            };
-        }
-
-        const showExercisesBtn = document.getElementById('showExercisesFromMoreBtn'); // New button for exercises
-        if (showExercisesBtn) {
-            showExercisesBtn.onclick = async (e) => {
-                e.preventDefault();
-                showView(exercisesView, navMore); // Show exercises view, keep 'More' active
-                await renderExercisesView(exercisesView); // Call the new render function for exercises
-            };
-        }
+    // Activate the corresponding nav link
+    const targetNavLink = navLinks[viewName];
+    if (targetNavLink) {
+        targetNavLink.classList.add('active-nav-link');
     }
 
-    // Initial load logic
-    try {
-        await openDatabase();
-        await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
-        await displayNextScheduledWorkout();
-        showView(dashboardView, navDashboard);
-    } catch (error) {
-        console.error('Failed to initialize app:', error);
-        const mainContentWrapper = document.getElementById('mainContentWrapper');
-        if (mainContentWrapper) {
-            mainContentWrapper.innerHTML = '<p class="text-center text-red-500 text-lg font-semibold mt-8">Failed to load the app. Please check your browser console for details.</p>';
-        }
+    // Load data specific to the view
+    if (viewName === 'tracking') {
+        displayProgress(stepsListElement, waterListElement, stepsChartCanvasElement, waterChartCanvasElement, caloriesListElement, caloriesChartCanvasElement);
     }
+}
 
-    // Navigation Link Event Listeners
-    navDashboard.addEventListener('click', (e) => {
-        e.preventDefault();
-        showView(dashboardView, navDashboard);
-        displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
-        displayNextScheduledWorkout();
-    });
+/**
+ * Initializes the application state.
+ */
+function initializeApp() {
+    // Determine the initial view based on the URL hash
+    const initialHash = window.location.hash.substring(1) || 'dashboard';
+    handleNavigation(initialHash);
 
-    navTracking.addEventListener('click', (e) => {
-        e.preventDefault();
-        showView(trackingView, navTracking);
-        displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
-    });
+    // Initial display of dashboard summary
+    displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+}
 
-    navWorkouts.addEventListener('click', async (e) => {
-        e.preventDefault();
-        showView(workoutsView, navWorkouts);
-        await renderWorkoutsView(workoutsView); // This will now only handle workouts
-    });
+// --- Event Listeners ---
+window.addEventListener('DOMContentLoaded', initializeApp);
 
-    navPlans.addEventListener('click', async (e) => {
-        e.preventDefault();
-        showView(workoutPlansView, navPlans);
-        await renderWorkoutPlansView(workoutPlansView);
-    });
-
-    navMore.addEventListener('click', async (e) => {
-        e.preventDefault();
-        showView(moreView, navMore);
-        renderMoreView();
-    });
-
-    // Event listener for the save button
-    saveDailyDataBtn.addEventListener('click', async () => {
-        const stepsValue = stepsInput.value;
-        const waterValue = waterInput.value;
-        const caloriesValue = caloriesInput.value;
-        const today = formatDate(new Date());
-
-        let stepsToSave = null;
-        let waterToSave = null;
-        let caloriesToSave = null;
-        let anyDataToSave = false;
-
-        // Validate and parse steps
-        if (stepsValue !== '') {
-            const parsedSteps = parseInt(stepsValue, 10);
-            if (isNaN(parsedSteps) || parsedSteps < 0) {
-                stepsInput.value = '';
-                stepsInput.placeholder = 'Invalid steps!';
-                setTimeout(() => { stepsInput.placeholder = 'e.g., 7500'; }, 3000);
-            } else {
-                stepsToSave = parsedSteps;
-                anyDataToSave = true;
-            }
-        }
-
-        // Validate and parse water
-        if (waterValue !== '') {
-            const parsedWater = parseInt(waterValue, 10);
-            if (isNaN(parsedWater) || parsedWater < 0) {
-                waterInput.value = '';
-                waterInput.placeholder = 'Invalid water!';
-                setTimeout(() => { waterInput.placeholder = 'e.g., 2000'; }, 3000);
-            } else {
-                waterToSave = parsedWater;
-                anyDataToSave = true;
-            }
-        }
-
-        // Validate and parse calories
-        if (caloriesValue !== '') {
-            const parsedCalories = parseInt(caloriesValue, 10);
-            if (isNaN(parsedCalories) || parsedCalories < 0) {
-                caloriesInput.value = '';
-                caloriesInput.placeholder = 'Invalid calories!';
-                setTimeout(() => { caloriesInput.placeholder = 'e.g., 1730'; }, 3000);
-            } else {
-                caloriesToSave = parsedCalories;
-                anyDataToSave = true;
-            }
-        }
-
-        if (!anyDataToSave) {
-            const errorMessage = document.createElement('li');
-            errorMessage.className = 'text-center text-red-500';
-            errorMessage.textContent = 'Please enter valid data for steps, water, or calories to save.';
-            const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6');
-            const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
-            if (currentError) currentError.remove();
-
-            const tempError = document.createElement('p');
-            tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
-            tempError.textContent = 'Please enter valid data for steps, water, or calories to save.';
-            dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling);
-            setTimeout(() => tempError.remove(), 5000);
-            return;
-        }
-
-        try {
-            if (stepsToSave !== null) {
-                await saveDailyData(STEPS_STORE_NAME, { date: today, value: stepsToSave });
-                stepsInput.value = '';
-            }
-
-            if (waterToSave !== null) {
-                await saveDailyData(WATER_STORE_NAME, { date: today, value: waterToSave });
-                waterInput.value = '';
-            }
-
-            if (caloriesToSave !== null) {
-                await saveDailyData(CALORIES_STORE_NAME, { date: today, value: caloriesToSave });
-                caloriesInput.value = '';
-            }
-
-            await checkAndAwardAchievements();
-
-            await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
-            await displayNextScheduledWorkout();
-            if (!trackingView.classList.contains('hidden')) {
-                await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
-            }
-
-        } catch (error) {
-                console.error('Error saving daily data:', error);
-                const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6');
-                const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
-                if (currentError) currentError.remove();
-
-                const tempError = document.createElement('p');
-                tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
-                tempError.textContent = 'Failed to save data. Please try again.';
-                dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling);
-                setTimeout(() => tempError.remove(), 5000);
-        }
-    });
+window.addEventListener('hashchange', () => {
+    const newHash = window.location.hash.substring(1) || 'dashboard';
+    handleNavigation(newHash);
 });
+
+// Event listener for saving daily data
+saveDailyDataBtn.addEventListener('click', async () => {
+    const steps = parseInt(stepsInput.value);
+    const water = parseInt(waterInput.value);
+    const calories = parseInt(caloriesInput.value);
+
+    const today = formatDate(new Date());
+
+    if (!isNaN(steps) && steps > 0) {
+        await saveDailyData(STEPS_STORE_NAME, { date: today, value: steps });
+        showToast('Steps data saved!');
+    }
+    if (!isNaN(water) && water > 0) {
+        await saveDailyData(WATER_STORE_NAME, { date: today, value: water });
+        showToast('Water data saved!');
+    }
+    if (!isNaN(calories) && calories > 0) {
+        await saveDailyData(CALORIES_STORE_NAME, { date: today, value: calories });
+        showToast('Calories data saved!');
+    }
+
+    // Refresh the dashboard summary display
+    displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+
+    // Clear input fields after saving
+    stepsInput.value = '';
+    waterInput.value = '';
+    caloriesInput.value = '';
+});
+
+// Event listener for "View Achievements" button in More view
+showAchievementsFromMoreBtn.addEventListener('click', () => {
+    window.location.hash = '#achievements';
+});
+
+// Event listener for "View Exercises" button in More view
+showExercisesFromMoreBtn.addEventListener('click', () => {
+    window.location.hash = '#exercises';
+});
+
