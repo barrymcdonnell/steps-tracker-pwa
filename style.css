@@ -9,7 +9,7 @@ body {
 body {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Align to start to allow header space */
     min-height: 100vh;
     background-color: #f3f4f6; /* Tailwind gray-100 */
 }
@@ -19,14 +19,14 @@ body {
     background-color: #ffffff; /* Tailwind white */
     padding: 2rem; /* Tailwind p-8 */
     border-radius: 0.75rem; /* Tailwind rounded-xl */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Tailwind shadow-lg */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.06); /* Tailwind shadow-lg */
     width: 100%;
     max-width: 28rem; /* Tailwind max-w-md */
     margin: 1rem; /* Tailwind mx-4 */
 }
 
 /* Input field styling */
-input[type="number"] {
+input[type="number"], input[type="text"], input[type="date"], select {
     border-width: 1px;
     border-color: #d1d5db; /* Tailwind border-gray-300 */
     padding: 0.75rem 1rem; /* Tailwind py-3 px-4 */
@@ -34,31 +34,64 @@ input[type="number"] {
     transition: all 0.2s ease-in-out;
 }
 
-input[type="number"]:focus {
+input[type="number"]:focus, input[type="text"]:focus, input[type="date"]:focus, select:focus {
     outline: none;
     border-color: transparent;
-    box-shadow: 0 0 0 2px #6366f1; /* Tailwind focus:ring-2 focus:ring-indigo-500 */
+    box-shadow: 0 0 0 2px #191970; /* Use primary color for focus ring */
 }
 
-/* Button styling */
-button {
-    background-color: #4f46e5; /* Tailwind bg-indigo-600 */
-    color: #ffffff; /* Tailwind text-white */
-    font-weight: 700; /* Tailwind font-bold */
-    padding: 0.75rem 1rem; /* Tailwind py-3 px-4 */
-    border-radius: 0.5rem; /* Tailwind rounded-lg */
-    transition: all 0.2s ease-in-out;
+/* Custom Gradient Classes */
+/* Primary button style */
+.btn-primary {
+    @apply w-full text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105;
+    background: linear-gradient(to right, #191970, #2a2a8a); /* Primary color gradient */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.btn-primary:hover {
+    background: linear-gradient(to right, #2a2a8a, #191970); /* Reverse gradient on hover */
+}
+.btn-primary:focus {
+    box-shadow: 0 0 0 2px #191970, 0 0 0 4px rgba(25, 25, 112, 0.5);
 }
 
-button:hover {
-    background-color: #4338ca; /* Tailwind hover:bg-indigo-700 */
-    transform: scale(1.02); /* Tailwind hover:scale-105 */
+/* Secondary button style (e.g., View Details) */
+.btn-secondary {
+    @apply text-white text-sm py-1 px-3 rounded-md transition duration-200;
+    background: linear-gradient(to right, #FF8C00, #ffa500); /* Secondary color gradient */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.btn-secondary:hover {
+    background: linear-gradient(to right, #ffa500, #FF8C00); /* Reverse gradient on hover */
+}
+.btn-secondary:focus {
+    box-shadow: 0 0 0 2px #FF8C00, 0 0 0 4px rgba(255, 140, 0, 0.5);
 }
 
-button:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #6366f1, 0 0 0 4px rgba(99, 102, 241, 0.5); /* Tailwind focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 */
+/* Neutral button style (e.g., Back, Cancel) */
+.btn-neutral {
+    @apply w-full text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-105;
+    background: linear-gradient(to right, #4a4a4a, #6b6b6b); /* Neutral color gradient */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
+.btn-neutral:hover {
+    background: linear-gradient(to right, #6b6b6b, #4a4a4a); /* Reverse gradient on hover */
+}
+.btn-neutral:focus {
+    box-shadow: 0 0 0 2px #4a4a4a, 0 0 0 4px rgba(74, 74, 74, 0.5);
+}
+
+/* Specific green for 'Start' workout button - keeping it distinct */
+.btn-green {
+    @apply text-white text-sm py-1 px-3 rounded-md transition duration-200;
+    background-color: #22c55e; /* Tailwind green-500 */
+}
+.btn-green:hover {
+    background-color: #16a34a; /* Tailwind green-600 */
+}
+.btn-green:focus {
+    box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
 
 /* List item styling */
 #stepsList li {
@@ -94,18 +127,42 @@ button:focus {
     }
 }
 
-/* Toast Notification Styles (New) */
+/* Toast Notification Styles */
 #toastNotification {
-    /* Initial state: hidden */
     visibility: hidden;
     opacity: 0;
-    transform: translate(-50%, 20px); /* Start slightly below its final position */
+    transform: translate(-50%, 20px);
     transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, visibility 0.5s;
 }
 
 #toastNotification.show {
-    /* Show state */
     visibility: visible;
     opacity: 1;
-    transform: translate(-50%, 0); /* Slide up to final position */
+    transform: translate(-50%, 0);
+}
+
+/* Header specific styles */
+header {
+    background: linear-gradient(to right, #191970, #2a2a8a); /* Primary color gradient */
+    border-bottom-left-radius: 0 !important; /* Override rounded-b-lg */
+    border-bottom-right-radius: 0 !important; /* Override rounded-b-lg */
+}
+
+/* Navigation Bar specific styles */
+nav {
+    background: linear-gradient(to right, #191970, #2a2a8a); /* Primary color gradient */
+}
+
+/* Active Nav Link Styling */
+nav .active-nav-link {
+    background: linear-gradient(to top, #FF8C00, #ffa500); /* Secondary color gradient for active tab */
+    color: #191970 !important; /* Dark text for contrast on orange */
+    font-weight: bold;
+    box-shadow: 0 -2px 8px rgba(255, 140, 0, 0.4); /* Subtle glow */
+}
+nav .active-nav-link span {
+    color: #191970 !important; /* Ensure span text is also dark */
+}
+nav .active-nav-link i {
+    color: #191970 !important; /* Ensure icon is also dark */
 }
