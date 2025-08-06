@@ -1,6 +1,6 @@
 // main.js
 import { displayProgress, displayDashboardSummary } from './display.js';
-import { saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
+import { saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME, initDb } from './db.js';
 import { formatDate } from './utils.js';
 
 // --- DOM Element References ---
@@ -133,7 +133,10 @@ function applyButtonHoverEffect(button, defaultGradient, hoverGradient) {
 /**
  * Initializes the application state.
  */
-function initializeApp() {
+async function initializeApp() {
+    // Wait for the database to be initialized before proceeding
+    await initDb();
+    
     // Determine the initial view based on the URL hash
     const initialHash = window.location.hash.substring(1) || 'dashboard';
     handleNavigation(initialHash);
