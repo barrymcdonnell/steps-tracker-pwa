@@ -1,12 +1,18 @@
 // Define the cache name
-const CACHE_NAME = 'step-tracker-cache-v1';
+const CACHE_NAME = 'step-tracker-cache-v2'; // Updated cache version
 
 // List of URLs to cache (app shell)
 const urlsToCache = [
     '/',
     '/index.html',
     '/style.css',
-    '/index.js',
+    '/main.js', // Ensure main.js is listed here
+    '/db.js', // Ensure db.js is listed here
+    '/utils.js', // Ensure utils.js is listed here
+    '/constants.js', // Ensure constants.js is listed here
+    '/display.js', // Ensure display.js is listed here
+    '/workoutDisplay.js', // Ensure workoutDisplay.js is listed here
+    '/achievementsDisplay.js', // Ensure achievementsDisplay.js is listed here
     '/manifest.json',
     // You'll need to create an 'icons' directory and place these files there
     '/icons/icon-72x72.png',
