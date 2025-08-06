@@ -2,8 +2,9 @@
 import { openDatabase, saveDailyData, STEPS_STORE_NAME, WATER_STORE_NAME, CALORIES_STORE_NAME } from './db.js';
 import { formatDate } from './utils.js';
 import { displayProgress, displayDashboardSummary } from './display.js';
-import { renderWorkoutsView, renderWorkoutPlansView, displayNextScheduledWorkout } from './workoutDisplay.js';
-import { renderAchievementsView, checkAndAwardAchievements } from './achievementsDisplay.js'; // Import new achievement functions
+// Import both renderWorkoutsView and renderExercisesView
+import { renderWorkoutsView, renderWorkoutPlansView, renderExercisesView, displayNextScheduledWorkout } from './workoutDisplay.js';
+import { renderAchievementsView, checkAndAwardAchievements } from './achievementsDisplay.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const stepsInput = document.getElementById('stepsInput');
@@ -33,18 +34,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const trackingView = document.getElementById('trackingView');
     const workoutsView = document.getElementById('workoutsView');
     const workoutPlansView = document.getElementById('workoutPlansView');
-    const moreView = document.getElementById('moreView'); // New: More view container
-    const achievementsView = document.getElementById('achievementsView'); // Achievements view is now a sub-view of More
+    const moreView = document.getElementById('moreView');
+    const exercisesView = document.getElementById('exercisesView'); // New exercises view container
+    const achievementsView = document.getElementById('achievementsView');
 
     // Navigation Links
     const navDashboard = document.getElementById('navDashboard');
     const navTracking = document.getElementById('navTracking');
     const navWorkouts = document.getElementById('navWorkouts');
     const navPlans = document.getElementById('navPlans');
-    const navMore = document.getElementById('navMore'); // Existing More navigation link
+    const navMore = document.getElementById('navMore');
 
     // Set the app version
-    appVersionSpan.textContent = '1.5.0'; // Updated version for new feature
+    appVersionSpan.textContent = '1.6.0'; // Updated version for new feature
 
     // Function to show a specific view and update active nav link
     function showView(viewToShow, activeNavLink) {
@@ -52,47 +54,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         trackingView.classList.add('hidden');
         workoutsView.classList.add('hidden');
         workoutPlansView.classList.add('hidden');
-        moreView.classList.add('hidden'); // Hide More view
-        achievementsView.classList.add('hidden'); // Hide achievements view (when switching from other main tabs)
-        // Add more views here as you add them
+        moreView.classList.add('hidden');
+        exercisesView.classList.add('hidden'); // Hide exercises view
+        achievementsView.classList.add('hidden');
 
         viewToShow.classList.remove('hidden');
 
         // Remove active class from all nav links
         document.querySelectorAll('.active-nav-link').forEach(link => {
             link.classList.remove('active-nav-link');
-            link.classList.remove('bg-indigo-600'); // Remove active background
+            link.classList.remove('bg-indigo-600');
         });
         // Add active class to the clicked nav link
         if (activeNavLink) {
             activeNavLink.classList.add('active-nav-link');
-            activeNavLink.classList.add('bg-indigo-600'); // Add active background
+            activeNavLink.classList.add('bg-indigo-600');
         }
     }
 
     // Function to render the content of the "More" view
     function renderMoreView() {
-        // This function can be expanded to render more options in the future
-        // For now, it just makes sure the achievements button is visible and clickable.
         const showAchievementsBtn = document.getElementById('showAchievementsFromMoreBtn');
         if (showAchievementsBtn) {
             showAchievementsBtn.onclick = async (e) => {
                 e.preventDefault();
-                // When clicking "View Achievements" from "More", we don't change the active nav link for "More"
-                showView(achievementsView, navMore); // Keep 'More' active
+                showView(achievementsView, navMore);
                 await renderAchievementsView(achievementsView);
+            };
+        }
+
+        const showExercisesBtn = document.getElementById('showExercisesFromMoreBtn'); // New button for exercises
+        if (showExercisesBtn) {
+            showExercisesBtn.onclick = async (e) => {
+                e.preventDefault();
+                showView(exercisesView, navMore); // Show exercises view, keep 'More' active
+                await renderExercisesView(exercisesView); // Call the new render function for exercises
             };
         }
     }
 
-
     // Initial load logic
     try {
-        await openDatabase(); // Initialize the database
-        // Display dashboard summary on initial load
+        await openDatabase();
         await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
-        await displayNextScheduledWorkout(); // Call new function to display next workout
-        showView(dashboardView, navDashboard); // Show dashboard by default
+        await displayNextScheduledWorkout();
+        showView(dashboardView, navDashboard);
     } catch (error) {
         console.error('Failed to initialize app:', error);
         const mainContentWrapper = document.getElementById('mainContentWrapper');
@@ -105,23 +111,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     navDashboard.addEventListener('click', (e) => {
         e.preventDefault();
         showView(dashboardView, navDashboard);
-        // Re-render dashboard summary if needed (e.g., if data changed while on another tab)
         displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
-        displayNextScheduledWorkout(); // Also update next scheduled workout
+        displayNextScheduledWorkout();
     });
 
     navTracking.addEventListener('click', (e) => {
         e.preventDefault();
         showView(trackingView, navTracking);
-        // Re-render tracking details when navigating to it
         displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
     });
 
     navWorkouts.addEventListener('click', async (e) => {
         e.preventDefault();
         showView(workoutsView, navWorkouts);
-        // Render the workouts view content
-        await renderWorkoutsView(workoutsView);
+        await renderWorkoutsView(workoutsView); // This will now only handle workouts
     });
 
     navPlans.addEventListener('click', async (e) => {
@@ -130,10 +133,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await renderWorkoutPlansView(workoutPlansView);
     });
 
-    navMore.addEventListener('click', async (e) => { // Existing event listener for More tab
+    navMore.addEventListener('click', async (e) => {
         e.preventDefault();
         showView(moreView, navMore);
-        renderMoreView(); // Render content specific to the More view
+        renderMoreView();
     });
 
     // Event listener for the save button
@@ -191,43 +194,38 @@ document.addEventListener('DOMContentLoaded', async () => {
             const errorMessage = document.createElement('li');
             errorMessage.className = 'text-center text-red-500';
             errorMessage.textContent = 'Please enter valid data for steps, water, or calories to save.';
-            // Prepend to stepsList (now in tracking view, but can be a general message area)
-            // For dashboard, we need a different error display. Let's use a general message div.
-            const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6'); // Target an existing div near the inputs
+            const dashboardErrorDiv = document.getElementById('dashboardView').querySelector('.mb-6');
             const currentError = dashboardErrorDiv.querySelector('.temp-error-message');
-            if (currentError) currentError.remove(); // Remove previous error if exists
+            if (currentError) currentError.remove();
 
             const tempError = document.createElement('p');
             tempError.className = 'text-center text-red-500 text-sm mt-2 temp-error-message';
             tempError.textContent = 'Please enter valid data for steps, water, or calories to save.';
-            dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling); // Insert after the save button div
+            dashboardErrorDiv.parentNode.insertBefore(tempError, dashboardErrorDiv.nextSibling);
             setTimeout(() => tempError.remove(), 5000);
             return;
         }
 
         try {
             if (stepsToSave !== null) {
-                await saveDailyData(STEPS_STORE_NAME, { date: today, value: stepsToSave }); // Pass as object
+                await saveDailyData(STEPS_STORE_NAME, { date: today, value: stepsToSave });
                 stepsInput.value = '';
             }
 
             if (waterToSave !== null) {
-                await saveDailyData(WATER_STORE_NAME, { date: today, value: waterToSave }); // Pass as object
+                await saveDailyData(WATER_STORE_NAME, { date: today, value: waterToSave });
                 waterInput.value = '';
             }
 
             if (caloriesToSave !== null) {
-                await saveDailyData(CALORIES_STORE_NAME, { date: today, value: caloriesToSave }); // Pass as object
+                await saveDailyData(CALORIES_STORE_NAME, { date: today, value: caloriesToSave });
                 caloriesInput.value = '';
             }
 
-            // After all data is potentially saved, check for achievements
             await checkAndAwardAchievements();
 
-            // Re-render dashboard summary after saving
             await displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
-            await displayNextScheduledWorkout(); // Update next scheduled workout after saving data
-            // If currently on tracking view, also update it
+            await displayNextScheduledWorkout();
             if (!trackingView.classList.contains('hidden')) {
                 await displayProgress(stepsList, waterList, stepsChartCanvas, waterChartCanvas, caloriesList, caloriesChartCanvas);
             }
