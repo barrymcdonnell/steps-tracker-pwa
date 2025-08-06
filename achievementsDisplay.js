@@ -237,4 +237,3 @@ export async function checkAndAwardAchievements() {
         await displayAchievements();
     }
 }
-�
