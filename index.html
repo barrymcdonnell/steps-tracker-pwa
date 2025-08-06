@@ -6,8 +6,8 @@
     <title>FitTrackr PWA</title>
     <!-- Link to Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom styles -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Custom styles - Added version query to force a cache refresh -->
+    <link rel="stylesheet" href="style.css?v=1.6.1">
     <!-- Web App Manifest -->
     <link rel="manifest" href="manifest.json">
     <!-- Theme color for browser UI -->
@@ -88,7 +88,7 @@
 
             <!-- App Version Text -->
             <div class="mt-8 text-center text-gray-500 text-xs">
-                App Version: <span id="appVersion">1.6.0</span>
+                App Version: <span id="appVersion">1.6.1</span>
             </div>
         </div>
 
@@ -219,10 +219,9 @@
     <script type="module" src="main.js"></script>
     <!-- Service Worker Registration -->
     <script>
-        // Register the service worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
+                navigator.serviceWorker.register('/service-worker.js')
                     .then(registration => {
                         console.log('Service Worker registered with scope:', registration.scope);
                     })
