@@ -1,27 +1,27 @@
 // service-worker.js
 const CACHE_NAME = 'step-tracker-cache-v2'; // Updated cache version as requested
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/main.js',
-    '/db.js',
-    '/utils.js',
-    '/constants.js',
-    '/workoutConstants.js', // Added as requested
-    '/display.js',
-    '/charts.js', // Added as requested
-    '/workoutDisplay.js',
-    '/achievementsDisplay.js',
-    '/manifest.json',
-    '/icons/icon-72x72.png',
-    '/icons/icon-96x96.png',
-    '/icons/icon-128x128.png',
-    '/icons/icon-144x144.png',
-    '/icons/icon-152x152.png',
-    '/icons/icon-192x192.png',
-    '/icons/icon-384x384.png',
-    '/icons/icon-512x512.png'
+    './',
+    './index.html',
+    './style.css',
+    './main.js',
+    './db.js',
+    './utils.js',
+    './constants.js',
+    './workoutConstants.js', // Added as requested
+    './display.js',
+    './charts.js', // Added as requested
+    './workoutDisplay.js',
+    './achievementsDisplay.js',
+    './manifest.json',
+    './icons/icon-72x72.png',
+    './icons/icon-96x96.png',
+    './icons/icon-128x128.png',
+    './icons/icon-144x144.png',
+    './icons/icon-152x152.png',
+    './icons/icon-192x192.png',
+    './icons/icon-384x384.png',
+    './icons/icon-512x512.png'
 ];
 
 // Install event: caches the static assets
