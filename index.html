@@ -3,231 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitTrackr PWA</title>
-    <!-- Link to Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Custom styles - Added version query to force a cache refresh -->
-    <link rel="stylesheet" href="style.css?v=1.6.3">
-    <!-- Web App Manifest -->
+    <title>DailyHabits PWA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="manifest" href="manifest.json">
-    <!-- Theme color for browser UI -->
-    <meta name="theme-color" content="#191970"/>
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <!-- Chart.js CDN for charting -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-100 flex flex-col items-center justify-start min-h-screen font-sans">
+<body class="bg-gray-100 flex flex-col items-center p-4 sm:p-6 font-inter min-h-screen">
 
-    <!-- Fixed Header -->
-    <header class="w-full bg-[#191970] text-white p-4 text-center text-2xl font-bold fixed top-0 left-0 z-20 shadow-lg">
-        FitTrackr
+    <!-- Header and Navigation -->
+    <header class="w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-4 sm:mb-0">DailyHabits</h1>
+        <nav class="w-full sm:w-auto">
+            <ul class="flex justify-around sm:justify-end space-x-2 sm:space-x-4 text-sm sm:text-base">
+                <li><a id="navDashboard" href="#dashboard" class="nav-link active-nav-link">Dashboard</a></li>
+                <li><a id="navTracking" href="#tracking" class="nav-link">Tracking</a></li>
+                <li><a id="navWorkouts" href="#workouts" class="nav-link">Workouts</a></li>
+                <li><a id="navPlans" href="#plans" class="nav-link">Plans</a></li>
+                <li><a id="navMore" href="#more" class="nav-link">More</a></li>
+            </ul>
+        </nav>
     </header>
 
-    <!-- Main Content Wrapper -->
-    <!-- Added pt-16 to account for the fixed header height -->
-    <div id="mainContentWrapper" class="w-full max-w-md mx-4 mt-8 pb-20 pt-16">
+    <!-- Main Content Area -->
+    <main class="w-full max-w-4xl">
 
-        <!-- Dashboard View -->
-        <div id="dashboardView" class="container bg-white p-8 rounded-xl shadow-lg mb-8">
-            <h1 class="text-3xl font-bold text-center text-[#191970] mb-6">Daily Habits Tracker</h1>
+        <!-- Toast Notification -->
+        <div id="toastNotification" class="toast-notification"></div>
 
-            <!-- Next Scheduled Workout Display -->
-            <div id="nextWorkoutDisplay" class="bg-indigo-50 p-4 rounded-lg shadow-md text-center mb-6">
-                <h3 class="text-lg font-semibold text-[#4a4a4a] mb-2">Next Scheduled Workout:</h3>
-                <p id="nextWorkoutDetails" class="text-[#191970] text-xl font-bold">Loading...</p>
-            </div>
-
-            <div class="mb-4">
-                <label for="stepsInput" class="block text-[#4a4a4a] text-sm font-semibold mb-2">Enter Today's Steps:</label>
-                <input type="number" id="stepsInput" placeholder="e.g., 7500"
-                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#191970] focus:border-transparent transition duration-200 ease-in-out">
-            </div>
-
-            <div class="mb-4">
-                <label for="waterInput" class="block text-[#4a4a4a] text-sm font-semibold mb-2">Enter Today's Water (ml):</label>
-                <input type="number" id="waterInput" placeholder="e.g., 2000"
-                       class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#191970] focus:border-transparent transition duration-200 ease-in-out">
-            </div>
-
-            <div class="mb-6">
-                <label for="caloriesInput" class="block text-[#4a4a4a] text-sm font-semibold mb-2">Enter Today's Calories:</label>
-                <input type="number" id="caloriesInput" placeholder="e.g., 1730"
-                   class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-[#191970] focus:border-transparent transition duration-200 ease-in-out">
-            </div>
-
-            <button id="saveDailyDataBtn" class="btn-save-daily">
-                Save Daily Data
-            </button>
-
-            <!-- Daily Totals Summary on Dashboard -->
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Today's Summary</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                    <div class="p-4 rounded-lg bg-indigo-100 flex flex-col items-center">
-                        <i class="fa-solid fa-shoe-prints text-3xl text-indigo-700 mb-2"></i>
-                        <p class="font-bold text-lg text-indigo-800" id="todaySteps">0</p>
-                        <p class="text-sm text-indigo-600">Steps</p>
-                        <p class="text-xs text-gray-600" id="todayStepsGoal"></p>
-                    </div>
-                    <div class="p-4 rounded-lg bg-blue-100 flex flex-col items-center">
-                        <i class="fa-solid fa-droplet text-3xl text-blue-700 mb-2"></i>
-                        <p class="font-bold text-lg text-blue-800" id="todayWater">0</p>
-                        <p class="text-sm text-blue-600">Water (ml)</p>
-                        <p class="text-xs text-gray-600" id="todayWaterGoal"></p>
-                    </div>
-                    <div class="p-4 rounded-lg bg-orange-100 flex flex-col items-center">
-                        <i class="fa-solid fa-fire text-3xl text-orange-700 mb-2"></i>
-                        <p class="font-bold text-lg text-orange-800" id="todayCalories">0</p>
-                        <p class="text-sm text-orange-600">Calories</p>
-                        <p class="text-xs text-gray-600" id="todayCaloriesGoal"></p>
-                    </div>
+        <!-- Dashboard View (Initially visible) -->
+        <div id="dashboardView" class="container mx-auto p-4 bg-white rounded-lg shadow-md transition-opacity duration-300">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Today's Progress</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-center">
+                <div class="bg-indigo-50 p-4 rounded-lg shadow-sm">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Steps</h3>
+                    <p id="todaySteps" class="text-3xl sm:text-4xl font-bold text-indigo-600 my-2">0</p>
+                    <p id="todayStepsGoal" class="text-sm text-gray-500">8000 left</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Water (ml)</h3>
+                    <p id="todayWater" class="text-3xl sm:text-4xl font-bold text-blue-600 my-2">0</p>
+                    <p id="todayWaterGoal" class="text-sm text-gray-500">2000ml left</p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-lg shadow-sm">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-700">Calories (kcal)</h3>
+                    <p id="todayCalories" class="text-3xl sm:text-4xl font-bold text-orange-600 my-2">0</p>
+                    <p id="todayCaloriesGoal" class="text-sm text-gray-500">1730 left</p>
                 </div>
             </div>
 
-            <!-- App Version Text -->
-            <div class="mt-8 text-center text-gray-500 text-xs">
-                App Version: <span id="appVersion">1.6.3</span>
-            </div>
-        </div>
-
-        <!-- Tracking View (Initially Hidden) -->
-        <div id="trackingView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
-            <h1 class="text-3xl font-bold text-center text-[#191970] mb-6">Tracking Details</h1>
-
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Your Last 7 Days (Steps):</h2>
-                <ul id="stepsList" class="space-y-3">
-                    <!-- Steps will be loaded here by JavaScript -->
-                    <li class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
-                        <span class="font-medium text-indigo-800">Loading...</span>
-                        <span class="text-sm text-indigo-600"></span>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Steps Progress</h2>
-                <div class="relative h-64">
-                    <canvas id="stepsChart"></canvas>
-                </div>
-            </div>
-
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Your Last 7 Days (Water):</h2>
-                <ul id="waterList" class="space-y-3">
-                    <!-- Water intake will be loaded here by JavaScript -->
-                    <li class="bg-blue-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
-                        <span class="font-medium text-blue-800">Loading...</span>
-                        <span class="text-sm text-blue-600"></span>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Water Intake Progress</h2>
-                <div class="relative h-64">
-                    <canvas id="waterChart"></canvas>
-                </div>
-            </div>
-
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Your Last 7 Days (Calories):</h2>
-                <ul id="caloriesList" class="space-y-3">
-                    <!-- Calories will be loaded here by JavaScript -->
-                    <li class="bg-orange-50 p-3 rounded-lg flex justify-between items-center animate-pulse">
-                        <span class="font-medium text-orange-800">Loading...</span>
-                        <span class="text-sm text-orange-600"></span>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="mt-8">
-                <h2 class="text-xl font-semibold text-[#4a4a4a] mb-4 text-center">Calorie Intake Progress</h2>
-                <div class="relative h-64">
-                    <canvas id="caloriesChart"></canvas>
+            <div class="bg-gray-50 p-4 sm:p-6 rounded-lg shadow-inner">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4">Log Today's Habits</h3>
+                <div class="space-y-4">
+                    <input id="stepsInput" type="number" placeholder="Enter steps" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                    <input id="waterInput" type="number" placeholder="Enter water (ml)" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    <input id="caloriesInput" type="number" placeholder="Enter calories (kcal)" class="w-full p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors">
+                    <button id="saveDailyDataBtn" class="w-full text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 focus:outline-none transform hover:scale-105" style="background: linear-gradient(to right, #22c55e, #16a34a);">Save Daily Data</button>
                 </div>
             </div>
         </div>
 
-        <!-- Workouts View (Initially Hidden) -->
-        <div id="workoutsView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
-            <!-- Content for workout routines will be rendered here by workoutDisplay.js -->
+        <!-- Tracking View -->
+        <div id="trackingView" class="container mx-auto p-4 bg-white rounded-lg shadow-md hidden">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Tracking History</h2>
+            
+            <!-- Steps Section -->
+            <div class="mb-8">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-700 mb-3">Steps Progress</h3>
+                <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                    <div class="h-64 mb-4">
+                        <canvas id="stepsChart"></canvas>
+                    </div>
+                    <ul id="stepsList" class="space-y-2 mt-4">
+                        <!-- Steps data will be dynamically added here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Water Section -->
+            <div class="mb-8">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-700 mb-3">Water Intake</h3>
+                <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                    <div class="h-64 mb-4">
+                        <canvas id="waterChart"></canvas>
+                    </div>
+                    <ul id="waterList" class="space-y-2 mt-4">
+                        <!-- Water data will be dynamically added here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Calories Section -->
+            <div class="mb-8">
+                <h3 class="text-lg sm:text-xl font-bold text-gray-700 mb-3">Calorie Intake</h3>
+                <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                    <div class="h-64 mb-4">
+                        <canvas id="caloriesChart"></canvas>
+                    </div>
+                    <ul id="caloriesList" class="space-y-2 mt-4">
+                        <!-- Calories data will be dynamically added here -->
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <!-- Workout Plans View (Initially Hidden) -->
-        <div id="workoutPlansView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
-            <!-- Content for workout plans will be rendered here by workoutDisplay.js -->
+        <!-- Workouts View -->
+        <div id="workoutsView" class="container mx-auto p-4 bg-white rounded-lg shadow-md hidden">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Workout Routines</h2>
+            <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                <ul id="workoutsList" class="space-y-4">
+                    <!-- Workout routines will be dynamically added here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Plans View -->
+        <div id="workoutPlansView" class="container mx-auto p-4 bg-white rounded-lg shadow-md hidden">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Workout Plans</h2>
+            <div class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                <ul id="workoutPlansList" class="space-y-4">
+                    <!-- Workout plans will be dynamically added here -->
+                </ul>
+            </div>
         </div>
 
         <!-- More View -->
-        <div id="moreView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
-            <h1 class="text-3xl font-bold text-center text-[#191970] mb-6">More Options</h1>
-            <div class="space-y-4">
-                <button id="showAchievementsFromMoreBtn" class="btn-primary">
-                    View Achievements
-                </button>
-                <button id="showExercisesFromMoreBtn" class="btn-primary">
-                    View Exercises
-                </button>
+        <div id="moreView" class="container mx-auto p-4 bg-white rounded-lg shadow-md hidden">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">More Options</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button id="showAchievementsFromMoreBtn" class="bg-purple-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 focus:outline-none hover:bg-purple-600">View Achievements</button>
+                <button id="showExercisesFromMoreBtn" class="bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 focus:outline-none hover:bg-emerald-600">Manage Exercises</button>
             </div>
         </div>
 
-        <!-- Exercises View (New - Initially Hidden) -->
-        <div id="exercisesView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
-            <!-- Content for individual exercises will be rendered here by workoutDisplay.js -->
+        <!-- Exercises View -->
+        <div id="exercisesView" class="container mx-auto p-4 bg-white rounded-lg shadow-md hidden">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Exercises</h2>
+            <!-- Exercise management UI will go here -->
         </div>
 
-        <!-- Achievements View (Initially Hidden, accessed via More) -->
-        <div id="achievementsView" class="container bg-white p-8 rounded-xl shadow-lg hidden">
-            <!-- Achievements content will be rendered here by achievementsDisplay.js -->
+        <!-- Achievements View -->
+        <div id="achievementsView" class="container mx-auto p-4 bg-white rounded-lg shadow-md hidden">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Achievements</h2>
+            <!-- Achievements UI will go here -->
         </div>
 
-    </div>
+    </main>
 
-    <!-- Navigation Bar (Bottom) -->
-    <nav class="bg-[#191970] text-white p-2 w-full fixed bottom-0 left-0 z-10 flex justify-around items-center shadow-md">
-        <a href="#dashboard" id="navDashboard" class="flex flex-col items-center p-2 rounded-md transition duration-200 text-white text-xs sm:text-base active-nav-link">
-            <i class="fa-solid fa-house text-xl sm:text-2xl"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="#tracking" id="navTracking" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
-            <i class="fa-solid fa-chart-line text-xl sm:text-2xl"></i>
-            <span>Tracking</span>
-        </a>
-        <a href="#workouts" id="navWorkouts" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
-            <i class="fa-solid fa-dumbbell text-xl sm:text-2xl"></i>
-            <span>Workouts</span>
-        </a>
-        <a href="#plans" id="navPlans" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
-            <i class="fa-solid fa-calendar-alt text-xl sm:text-2xl"></i>
-            <span>Plans</span>
-        </a>
-        <a href="#more" id="navMore" class="flex flex-col items-center p-2 rounded-md hover:bg-indigo-600 transition duration-200 text-white text-xs sm:text-base">
-            <i class="fa-solid fa-ellipsis text-xl sm:text-2xl"></i>
-            <span>More</span>
-        </a>
-    </nav>
-
-    <!-- Toast Notification -->
-    <div id="toastNotification" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl text-center text-lg z-50 opacity-0 transition-all duration-500 ease-in-out transform -translate-y-4 pointer-events-none">
-        Achievement Unlocked!
-    </div>
-
-    <!-- Main JavaScript file - now loaded as a module -->
-    <script type="module" src="main.js"></script>
-    <!-- Service Worker Registration -->
+    <!-- JavaScript Imports -->
+    <script src="main.js" type="module"></script>
     <script>
+        // Service worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered with scope:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
+                navigator.serviceWorker.register('service-worker.js').then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
             });
         }
     </script>
