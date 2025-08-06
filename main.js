@@ -105,6 +105,32 @@ function handleNavigation(viewName) {
 }
 
 /**
+ * Applies a hover effect to a button using JavaScript to manipulate styles directly.
+ * This is an alternative to CSS classes if the styles are not being applied correctly.
+ * @param {HTMLElement} button - The button element to apply the effects to.
+ * @param {string} defaultGradient - The default CSS gradient string.
+ * @param {string} hoverGradient - The CSS gradient string for the hover state.
+ */
+function applyButtonHoverEffect(button, defaultGradient, hoverGradient) {
+    button.addEventListener('mouseover', () => {
+        button.style.background = hoverGradient;
+        button.style.transform = 'scale(1.05)';
+        button.style.transition = 'background 0.2s ease-in-out, transform 0.2s ease-in-out';
+    });
+    button.addEventListener('mouseout', () => {
+        button.style.background = defaultGradient;
+        button.style.transform = 'scale(1.0)';
+        button.style.transition = 'background 0.2s ease-in-out, transform 0.2s ease-in-out';
+    });
+    button.addEventListener('mousedown', () => {
+        button.style.transform = 'scale(0.98)';
+    });
+    button.addEventListener('mouseup', () => {
+        button.style.transform = 'scale(1.05)';
+    });
+}
+
+/**
  * Initializes the application state.
  */
 function initializeApp() {
@@ -114,6 +140,11 @@ function initializeApp() {
 
     // Initial display of dashboard summary
     displayDashboardSummary(todayStepsElement, todayWaterElement, todayCaloriesElement, todayStepsGoalElement, todayWaterGoalElement, todayCaloriesGoalElement);
+    
+    // Apply the custom hover effect to the Save Daily Data button
+    const defaultGradient = 'linear-gradient(to right, #22c55e, #16a34a)';
+    const hoverGradient = 'linear-gradient(to right, #16a34a, #22c55e)';
+    applyButtonHoverEffect(saveDailyDataBtn, defaultGradient, hoverGradient);
 }
 
 // --- Event Listeners ---
@@ -163,4 +194,3 @@ showAchievementsFromMoreBtn.addEventListener('click', () => {
 showExercisesFromMoreBtn.addEventListener('click', () => {
     window.location.hash = '#exercises';
 });
-
