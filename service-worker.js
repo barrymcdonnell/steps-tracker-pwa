@@ -1,20 +1,19 @@
-// Define the cache name
-const CACHE_NAME = 'step-tracker-cache-v2'; // Updated cache version
-
-// List of URLs to cache (app shell)
+// service-worker.js
+const CACHE_NAME = 'step-tracker-cache-v2'; // Updated cache version as requested
 const urlsToCache = [
     '/',
     '/index.html',
     '/style.css',
-    '/main.js', // Ensure main.js is listed here
-    '/db.js', // Ensure db.js is listed here
-    '/utils.js', // Ensure utils.js is listed here
-    '/constants.js', // Ensure constants.js is listed here
-    '/display.js', // Ensure display.js is listed here
-    '/workoutDisplay.js', // Ensure workoutDisplay.js is listed here
-    '/achievementsDisplay.js', // Ensure achievementsDisplay.js is listed here
+    '/main.js',
+    '/db.js',
+    '/utils.js',
+    '/constants.js',
+    '/workoutConstants.js', // Added as requested
+    '/display.js',
+    '/charts.js', // Added as requested
+    '/workoutDisplay.js',
+    '/achievementsDisplay.js',
     '/manifest.json',
-    // You'll need to create an 'icons' directory and place these files there
     '/icons/icon-72x72.png',
     '/icons/icon-96x96.png',
     '/icons/icon-128x128.png',
@@ -25,21 +24,21 @@ const urlsToCache = [
     '/icons/icon-512x512.png'
 ];
 
-// Install event: cache the app shell
+// Install event: caches the static assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('Service Worker: Caching app shell');
+                console.log('Service Worker: Caching assets');
                 return cache.addAll(urlsToCache);
             })
             .catch(error => {
-                console.error('Service Worker: Caching failed', error);
+                console.error('Service Worker: Cache addAll failed', error);
             })
     );
 });
 
-// Activate event: clean up old caches
+// Activate event: cleans up old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -49,13 +48,14 @@ self.addEventListener('activate', (event) => {
                         console.log('Service Worker: Deleting old cache', cacheName);
                         return caches.delete(cacheName);
                     }
+                    return null;
                 })
             );
         })
     );
 });
 
-// Fetch event: serve from cache first, then network
+// Fetch event: serves cached content first, then fetches from network
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
@@ -71,10 +71,10 @@ self.addEventListener('fetch', (event) => {
                         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
                             return networkResponse;
                         }
-
                         // IMPORTANT: Clone the response. A response is a stream
                         // and can only be consumed once. We must clone it so that
-                        // we can consume the stream twice: one for the browser and one for the cache.
+                        // we can consume the stream twice: one for the cache and one
+                        // for the browser.
                         const responseToCache = networkResponse.clone();
 
                         caches.open(CACHE_NAME)
@@ -84,13 +84,12 @@ self.addEventListener('fetch', (event) => {
 
                         return networkResponse;
                     })
-                    .catch(() => {
-                        // This catch block handles network errors.
-                        // You could return an offline page here if needed.
-                        console.log('Service Worker: Fetch failed, serving offline content if available.');
-                        // For a simple app, we might just return an empty response or a generic fallback.
-                        // For a more robust app, you'd serve a specific offline.html page.
-                        return new Response('<h1>You are offline</h1>', {
+                    .catch(error => {
+                        console.error('Service Worker: Fetch failed:', event.request.url, error);
+                        // Fallback for offline if network fails and not in cache
+                        // You can serve an offline page here if you have one
+                        // For now, just return a generic response or throw error
+                        return new Response('<h1>Offline</h1><p>Please check your internet connection.</p>', {
                             headers: { 'Content-Type': 'text/html' }
                         });
                     });
